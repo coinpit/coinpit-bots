@@ -3,17 +3,18 @@ var sequencer = require('sequencer-js')()
 var mangler   = require('mangler')
 var assert    = require('affirm.js')
 
-var mmbot = bluebird.coroutine(function* mmBot(baseurl, wallet, side) {
-  console.log("Starting bot for", wallet.address)
+var mmbot = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth) {
+  console.log("Starting " + side + " bot for", wallet.address)
   var PusherClient = require('pusher-client')
   var cc           = require("coinpit-client")(baseurl)
   var account      = yield cc.getAccount(wallet.privateKey)
-  account.logging = true
+  account.logging  = true
   var pusherClient = new PusherClient('de504dc5763aeef9ff52')
   var channel      = pusherClient.subscribe('live_trades')
   var stopPrice    = 10, targetPrice = 0.0
   var lastPrice
   var PRICE_ADD    = { buy: -0.1, sell: 0.1 }
+
   channel.bind('trade', bluebird.coroutine(function*(data) {
     var price = account.fixedPrice(data.price)
     // console.log(price)
@@ -22,18 +23,28 @@ var mmbot = bluebird.coroutine(function* mmBot(baseurl, wallet, side) {
   }))
 
   var marketMoved = bluebird.coroutine(function* marketMoved(price) {
-    lastPrice = price
+    lastPrice  = price
     // console.log("price", price)
-    var openOrders = account.getOpenOrders()
-    for (var i = 0; i < openOrders.length; i++) {
-      var order = openOrders[i];
-      if (order.side === side && order.orderType === 'LMT') {
-        yield* updateOrder(order, price)
-        return
+    var orders = filterAndSort(account.getOpenOrders())
+    if(orders.length >= depth){
+      yield* updateOrder(orders[orders.length - 1], price)
+    } else {
+      try {
+        yield* createOrder(side, price)
+      } catch (e) {
+        console.log('Order Creation error', e.message)
+        if(orders[0]) yield* updateOrder(orders[orders.length - 1], price)
       }
     }
-    yield* createOrder(side, price)
   })
+
+  function filterAndSort(orders) {
+    var filtered = orders.filter(function (order) {
+      return (order.side === side && order.orderType === "LMT")
+    })
+    filtered.sort(compare[side])
+    return filtered
+  }
 
   function* createOrder(side, price) {
     yield account.createOrders(
@@ -55,6 +66,15 @@ var mmbot = bluebird.coroutine(function* mmBot(baseurl, wallet, side) {
     yield account.updateOrders([order])
   }
 
+  var compare = {
+    buy : function buyOrderCompare(order1, order2) {
+      return order1.price == order2.price ? 0 : ( order1.price > order2.price ? -1 : 1 );
+    },
+    sell: function sellOrderCompare(order1, order2) {
+      return order1.price == order2.price ? 0 : ( order1.price < order2.price ? -1 : 1 );
+    }
+  }
+
   /*setInterval(bluebird.coroutine(function*(){
    try {
    yield* marketMoved(numberBetween(500, 550))
@@ -71,10 +91,10 @@ var mmbot = bluebird.coroutine(function* mmBot(baseurl, wallet, side) {
 module.exports = (function () {
   var wallet = require("./privateKeyReader")(process.argv[2])
   assert(wallet, 'PrivateKey not found. Check key file.')
-  var baseUrl  = process.env.BASE_URL
-  baseUrl = baseUrl || (wallet.address.startsWith("1") ? "https://live.coinpit.io": "https://live.coinpit.me")
-  mmbot(baseUrl, wallet, "buy")
-  mmbot(baseUrl, wallet, "sell")
+  var baseUrl = process.env.BASE_URL
+  baseUrl     = baseUrl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
+  mmbot(baseUrl, wallet, "buy", 10)
+  mmbot(baseUrl, wallet, "sell", 10)
 })()
 
 
