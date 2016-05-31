@@ -1,0 +1,36 @@
+{
+  "name": "coinpit-bots",
+  "version": "0.0.1",
+  "description": "bots for coinpit app",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha specs/*"
+  },
+  "engines": {
+    "node": ">= 4.0.0"
+  },
+  "keywords": [
+    "bot",
+    "bots",
+    "simulators",
+    "client",
+    "example"
+  ],
+  "author": "coinpit",
+  "license": "MIT",
+  "dependencies": {
+    "affirm.js": "^1.0.0",
+    "bitcoinutil": "^1.1.3",
+    "bluebird": "^3.4.0",
+    "coinpit-client": "../coinpit-client/coinpit-client-0.0.1.tgz",
+    "mangler": "^1.0.1",
+    "pusher-client": "^1.1.0",
+    "sequencer-js": "0.0.2"
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "fixtures.js": "^2.1.0",
+    "mocha": "^2.5.3",
+    "mocha-generators": "^1.2.0"
+  }
+}
