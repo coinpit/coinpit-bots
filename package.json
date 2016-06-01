@@ -25,7 +25,8 @@
     "coinpit-client": "../coinpit-client/coinpit-client-0.0.1.tgz",
     "mangler": "^1.0.1",
     "pusher-client": "^1.1.0",
-    "sequencer-js": "0.0.2"
+    "sequencer-js": "0.0.2",
+    "socket.io-client": "^1.4.6"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",

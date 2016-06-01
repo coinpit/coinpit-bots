@@ -1,3 +1,3 @@
 module.exports = {
-  marketmaker: require("./src/marketmaker")
+  marketmaker: require("./src/marketmakerBot")
 }
