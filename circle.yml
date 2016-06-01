@@ -9,7 +9,8 @@ test:
     - npm test
 
 deployment:
-  hub:
+  docker:
+    branch: master
     commands:
       - docker info
       - docker build -t coinpit/coinpit-bots .
