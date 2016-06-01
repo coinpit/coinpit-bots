@@ -1,0 +1,16 @@
+machine:
+  node:
+    version: 4.0.0
+  services:
+    - docker
+
+test:
+  override:
+    - npm test
+
+deployment:
+  hub:
+    - docker info
+    - docker build -t coinpit/coinpit-bots .
+    - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+    - docker push coinpit/coinpit-bots
