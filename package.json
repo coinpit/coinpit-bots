@@ -9,6 +9,14 @@
   "engines": {
     "node": ">= 4.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coinpit/coinpit-bots.git"
+  },
+  "bugs": {
+    "url": "https://github.com/coinpit/coinpit-bots/issues"
+  },
+  "homepage": "https://github.com/coinpit/coinpit-bots#readme",
   "keywords": [
     "bot",
     "bots",
@@ -22,7 +30,7 @@
     "affirm.js": "^1.0.0",
     "bitcoinutil": "^1.1.3",
     "bluebird": "^3.4.0",
-    "coinpit-client": "../coinpit-client/coinpit-client-0.0.1.tgz",
+    "coinpit-client": "~0.0.2",
     "mangler": "^1.0.1",
     "pusher-client": "^1.1.0",
     "sequencer-js": "0.0.2",
