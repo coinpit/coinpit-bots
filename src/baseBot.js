@@ -4,31 +4,25 @@ var mangler   = require('mangler')
 
 module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth) {
   console.log("Starting " + side + " bot for", wallet.address)
-  var bot = {}
-  var cc           = require("coinpit-client")(baseurl)
-  var account      = yield cc.getAccount(wallet.privateKey)
-  account.logging  = true
+  var bot         = {}
+  var cc          = require("coinpit-client")(baseurl)
+  var account     = yield cc.getAccount(wallet.privateKey)
+  account.logging = true
 
-  var stopPrice    = 10, targetPrice = 0.0
+  var stopPrice = 10, targetPrice = 0.0
   var lastPrice
-  var PRICE_ADD    = { buy: -0.1, sell: 0.1 }
+  var PRICE_ADD = { buy: -0.1, sell: 0.1 }
 
-  
   bot.marketMoved = bluebird.coroutine(function* marketMoved(price) {
     price = account.fixedPrice(price)
-    if(lastPrice === price) return
+    if (lastPrice === price) return
     lastPrice  = price
     // console.log("price", price)
     var orders = filterAndSort(account.getOpenOrders())
-    if(orders.length >= depth){
-      yield* updateOrder(orders[orders.length - 1], price)
+    if (orders.length >= depth) {
+      yield* updateLastOrder(orders, price)
     } else {
-      try {
-        yield* createOrder(side, price)
-      } catch (e) {
-        console.log('Order Creation error', e.message)
-        if(orders[0]) yield* updateOrder(orders[orders.length - 1], price)
-      }
+      yield* createOrUpdateOrdersBasedOnMargin(orders, side, price)
     }
   })
 
@@ -40,19 +34,35 @@ module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth
     return filtered
   }
 
-  function* createOrder(side, price) {
-    yield account.createOrders(
-      [{
-        clientid   : account.newUUID(),
-        userid     : account.userid,
-        side       : side,
-        quantity   : 1,
-        price      : mangler.fixed(price + PRICE_ADD[side]),
-        orderType  : 'LMT',
-        stopPrice  : stopPrice,
-        targetPrice: targetPrice
-      }]
-    )
+  function* createOrUpdateOrdersBasedOnMargin(orders, side, price) {
+    try {
+      var order = newOrder(side, price)
+      if (account.getPostAvailableMargin([order]) >= 0) {
+        yield account.createOrders([order])
+      } else {
+        yield* updateLastOrder(orders, price)
+      }
+    } catch (e) {
+      console.log('Order Creation error', e.message)
+      yield* updateLastOrder(orders, price)
+    }
+  }
+
+  function* updateLastOrder(orders, price) {
+    if (orders[0]) yield* updateOrder(orders[orders.length - 1], price)
+  }
+
+  function newOrder(side, price) {
+    return {
+      clientid   : account.newUUID(),
+      userid     : account.userid,
+      side       : side,
+      quantity   : 1,
+      price      : mangler.fixed(price + PRICE_ADD[side]),
+      orderType  : 'LMT',
+      stopPrice  : stopPrice,
+      targetPrice: targetPrice
+    }
   }
 
   function* updateOrder(order, price) {
