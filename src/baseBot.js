@@ -61,8 +61,7 @@ module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth
       price      : mangler.fixed(price + PRICE_ADD[side]),
       orderType  : 'LMT',
       stopPrice  : stopPrice,
-      targetPrice: targetPrice,
-      makerOnly  : true
+      targetPrice: targetPrice
     }
   }
 
