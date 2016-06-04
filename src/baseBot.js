@@ -40,12 +40,18 @@ module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth
       if (account.getPostAvailableMargin([order]) >= 0) {
         yield account.createOrders([order])
       } else {
+        yield* sendToMarginIfAvailable()
         yield* updateLastOrder(orders, price)
       }
     } catch (e) {
       console.log('Order Creation error', e.message)
       yield* updateLastOrder(orders, price)
     }
+  }
+
+  function* sendToMarginIfAvailable(){
+    var confirmed = account.getBalance().multisig.confirmed
+    if(confirmed >= 0) yield account.transferToMargin(confirmed, true)
   }
 
   function* updateLastOrder(orders, price) {
