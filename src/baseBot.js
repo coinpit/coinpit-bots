@@ -1,8 +1,9 @@
-var bluebird  = require('bluebird')
-var sequencer = require('sequencer-js')()
-var mangler   = require('mangler')
-
-module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth) {
+var bluebird    = require('bluebird')
+var sequencer   = require('sequencer-js')()
+var mangler     = require('mangler')
+var util = require('util')
+var bitcoinDust = 5430 + 5000
+module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth) {
   console.log("Starting " + side + " bot for", wallet.address)
   var bot         = {}
   var cc          = require("coinpit-client")(baseurl)
@@ -44,14 +45,18 @@ module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth
         yield* updateLastOrder(orders, price)
       }
     } catch (e) {
-      console.log('Order Creation error', e.message)
+      util.log(Date.now(), 'Order Creation error', e.message)
       yield* updateLastOrder(orders, price)
     }
   }
 
-  function* sendToMarginIfAvailable(){
-    var confirmed = account.getBalance().multisig.confirmed
-    if(confirmed >= 0) yield account.transferToMargin(confirmed, true)
+  function* sendToMarginIfAvailable() {
+    try {
+      var confirmed = account.getBalance().multisig.confirmed
+      if (confirmed > bitcoinDust) yield account.transferToMargin(confirmed, true)
+    } catch (e) {
+      util.log(Date.now(), 'Transfer to margin failed', e.message)
+    }
   }
 
   function* updateLastOrder(orders, price) {
@@ -85,6 +90,18 @@ module.exports = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth
     }
   }
 
+  setInterval(function stats() {
+    var balance    = account.getBalance()
+    var openOrders = account.getOpenOrders()
+    var ocos       = [], limits = []
+    for (var i = 0; i < openOrders.length; i++) {
+      var order = openOrders[i];
+      if (order.oco) ocos.push(order)
+      else limits.push(order)
+    }
+    util.log(Date.now(), "limits:", limits.length, "ocos:", ocos.length, "total balance:", balance.balance,
+                "total availableMargin:", balance.availableMargin, 'multisigBalance:', balance.multisig.balance)
+  }, 120000)
   return bot
 })
 

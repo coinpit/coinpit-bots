@@ -2,8 +2,7 @@ var fs     = require('fs')
 var assert = require('affirm.js')
 
 module.exports = function (walletFile) {
-  var walletData  = readWallet(walletFile)
-  return walletData
+  return readWallet(walletFile)
 }
 
 function readWallet(walletFile) {
