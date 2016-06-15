@@ -3,4 +3,11 @@ module.exports = function (listener, coinpitUrl) {
   socket.on('trade', function (trade) {
     listener(trade.price)
   })
+  socket.on('orderbook', function(orderbook) {
+    console.log('orderbook', orderbook)
+  })
+
+  socket.on('difforderbook', function(difforderbook) {
+    console.log('difforderbook', difforderbook)
+  })
 }

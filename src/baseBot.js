@@ -3,22 +3,22 @@ var sequencer   = require('sequencer-js')()
 var mangler     = require('mangler')
 var util = require('util')
 var bitcoinDust = 5430 + 5000
-module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth) {
+module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, depth, stopPrice, targetPrice) {
   console.log("Starting " + side + " bot for", wallet.address)
   var bot         = {}
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
 
-  var stopPrice = 10, targetPrice = 0.0
+  stopPrice = stopPrice || 10
+  targetPrice = typeof(targetPrice) === 'number' ? targetPrice : 0.0
   var lastPrice
-  var PRICE_ADD = { buy: -0.1, sell: 0.1 }
 
   bot.marketMoved = bluebird.coroutine(function* marketMoved(price) {
     price = account.fixedPrice(price)
-    if (lastPrice === price) return
+    if (lastPrice === price) return;
     lastPrice  = price
-    // console.log("price", price)
+    console.log("price", price)
     var orders = filterAndSort(account.getOpenOrders())
     if (orders.length >= depth) {
       yield* updateLastOrder(orders, price)
@@ -38,6 +38,7 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, dept
   function* createOrUpdateOrdersBasedOnMargin(orders, side, price) {
     try {
       var order = newOrder(side, price)
+      console.log('Order', order)
       if (account.getPostAvailableMargin([order]) >= 0) {
         yield account.createOrders([order])
       } else {
@@ -69,7 +70,7 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, dept
       userid     : account.userid,
       side       : side,
       quantity   : 1,
-      price      : mangler.fixed(price + PRICE_ADD[side]),
+      price      : mangler.fixed(price),
       orderType  : 'LMT',
       stopPrice  : stopPrice,
       targetPrice: targetPrice
@@ -77,7 +78,7 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, dept
   }
 
   function* updateOrder(order, price) {
-    order.price = mangler.fixed(price + PRICE_ADD[side])
+    order.price = mangler.fixed(price)
     yield account.updateOrders([order])
   }
 
@@ -104,5 +105,3 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, dept
   }, 120000)
   return bot
 })
-
-
