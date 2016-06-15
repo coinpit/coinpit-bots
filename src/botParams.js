@@ -6,10 +6,14 @@ module.exports = function(walletFileName) {
   var baseurl = process.env.BASE_URL
   baseurl     = baseurl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
   var depth = (process.env.DEPTH || 10) - 0
+  var stopPoints = (process.env.STP || 10) - 0
+  var targetPoints = (process.env.TGT || 10) - 0
 
   return {
     baseurl: baseurl,
     depth: depth,
-    wallet: wallet
+    wallet: wallet,
+    stop: stopPoints,
+    target: targetPoints
   }
 }
