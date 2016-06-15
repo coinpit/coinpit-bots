@@ -7,13 +7,15 @@ var botParams = require('./botParams')(process.argv[2])
 var bot = bluebird.coroutine(function* mmBot(botParams) {
   var baseurl = botParams.baseurl, wallet = botParams.wallet, depth = botParams.depth
   var PRICE_ADD = { buy: -0.1, sell: 0.1 }
-  var side = process.argv[3] === 'sell' ? 'sell' : 'buy'
 
-  var mmBot = yield baseBot(baseurl, wallet, side, depth)
+  var mmBuyBot = yield baseBot(baseurl, wallet, 'buy', depth)
+  var mmSellBot = yield baseBot(baseurl, wallet, 'sell', depth)
+
   require('./bitstampFeed')(listener, baseurl)
 
   function listener(price){
-    sequencer.push(mmBot.marketMoved.bind(mmBot, price + PRICE_ADD[side]))
+    sequencer.push(mmBuyBot.marketMoved.bind(mmBuyBot, price + PRICE_ADD.buy))
+    sequencer.push(mmSellBot.marketMoved.bind(mmSellBot, price + PRICE_ADD.sell))
   }
 })
 
