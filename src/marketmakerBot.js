@@ -11,7 +11,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   var mmBuyBot = yield baseBot(baseurl, wallet, 'buy', depth)
   var mmSellBot = yield baseBot(baseurl, wallet, 'sell', depth)
 
-  require('./bitstampFeed')(listener, baseurl)
+  require('./coinpitFeed')(listener, baseurl)
 
   function listener(price){
     sequencer.push(mmBuyBot.marketMoved.bind(mmBuyBot, price + PRICE_ADD.buy))
