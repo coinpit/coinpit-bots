@@ -18,8 +18,8 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, stopPrice,
   bot.marketMoved = bluebird.coroutine(function* marketMoved(price) {
     price = account.fixedPrice(price)
     if (lastPrice === price) return;
+    console.log('New price', price)
     lastPrice  = price
-    console.log("price", price)
     account.closeAll()
     var bidAsk = account.getBidAsk()
     var orders
@@ -34,16 +34,17 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, stopPrice,
         newOrder('buy', price, false)
       ]
     }
-    yield account.createOrders(orders)
+    yield* createOrders(orders)
   })
 
   function* createOrders(orders) {
     try {
-      if (!account.getPostAvailableMargin(orders) >= 0) {
+      var postAvailableMargin = account.getPostAvailableMargin(orders)
+      if (postAvailableMargin < 0) {
         yield* sendToMarginIfAvailable()
+        console.log('Insufficient margin, Need at least', postAvailableMargin)
       }
       if (account.getPostAvailableMargin(orders) >= 0) {
-        console.log('Insufficient margin')
         yield account.createOrders(orders)
       }
     } catch (e) {
