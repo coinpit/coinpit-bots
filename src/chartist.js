@@ -13,11 +13,13 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, stopPrice,
 
   stopPrice = stopPrice || 10
   targetPrice = typeof(targetPrice) === 'number' ? targetPrice : 0.0
-  var lastPrice
+  var lastPrice, lastTime = Date.now()
 
   bot.marketMoved = bluebird.coroutine(function* marketMoved(price) {
     price = account.fixedPrice(price)
     if (lastPrice === price) return;
+    if(Date.now() - lastTime < 6000) return;
+    lastTime = Date.now()
     console.log('New price', price)
     lastPrice  = price
     account.closeAll()
@@ -86,6 +88,6 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, stopPrice,
     }
     util.log(Date.now(), "limits:", limits.length, "ocos:", ocos.length, "total balance:", balance.balance,
                 "total availableMargin:", balance.availableMargin, 'multisigBalance:', balance.multisig.balance)
-  }, 120000)
+  }, 300000)
   return bot
 })
