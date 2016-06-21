@@ -22,7 +22,6 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, stopPrice,
     lastTime = Date.now()
     console.log('New price', price)
     lastPrice  = price
-    account.closeAll()
     var bidAsk = account.getBidAsk()
     var orders
     if(price > bidAsk.ask) {

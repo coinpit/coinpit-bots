@@ -13,9 +13,24 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   require('./bitstampFeed')(listener, baseurl)
 
-  function listener(price){
-    sequencer.push(mmBuyBot.marketMoved.bind(mmBuyBot, price + PRICE_ADD.buy))
-    sequencer.push(mmSellBot.marketMoved.bind(mmSellBot, price + PRICE_ADD.sell))
+  function listener(price) {
+    var crossedOrders = getCrossedOrders(price)
+    mmBuyBot.account.cancelOrders(crossedOrders).then(function() {
+      sequencer.push(mmBuyBot.marketMoved.bind(mmBuyBot, price + PRICE_ADD.buy))
+      sequencer.push(mmSellBot.marketMoved.bind(mmSellBot, price + PRICE_ADD.sell))
+    })
+  }
+
+  function getCrossedOrders(price) {
+    var orders = mmBuyBot.account.getOpenOrders()
+    return orders.filter(function(order) {
+      return order.side === 'buy' && order.price > price ||
+             order.side === 'sell' && order.price < price
+    })
+  }
+
+  function* cancel(orders) {
+
   }
 })
 

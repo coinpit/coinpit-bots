@@ -8,6 +8,7 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, side, dept
   var bot         = {}
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
+  bot.account     = account
   account.logging = true
 
   stopPrice = stopPrice || 10
