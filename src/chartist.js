@@ -11,7 +11,7 @@ module.exports  = bluebird.coroutine(function* mmBot(baseurl, wallet, stopPrice,
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
 
-  stopPrice = stopPrice || 10
+  stopPrice = 0.1
   targetPrice = typeof(targetPrice) === 'number' ? targetPrice : 0.0
   var lastPrice, lastTime = Date.now()
 
