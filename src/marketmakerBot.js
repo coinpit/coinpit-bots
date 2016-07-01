@@ -1,27 +1,26 @@
 var bluebird  = require('bluebird')
-var sequencer = require('sequencer-js')()
-var assert    = require('affirm.js')
 var mangler   = require('mangler')
 var botParams = require('./botParams')(process.argv[2])
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
-  var baseurl = botParams.baseurl, wallet = botParams.wallet, depth = botParams.depth
-  var SPREAD = 0.1
-  var STEP = 0.1
-  var DEPTH = typeof(depth) === 'number' && depth > 0 || .5
+  var baseurl     = botParams.baseurl
+  var wallet      = botParams.wallet
+  var DEPTH       = botParams.depth
+  var SPREAD      = botParams.spread
+  var STEP        = botParams.step
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
 
   var listener = {}
 
-  function createNewBook(price){
+  function createNewBook(price) {
     var buys = {}, sells = {}
-    for(var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - DEPTH); i= mangler.fixed(i-0.1))
+    for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - DEPTH); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i)
-    for(var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + DEPTH); i = mangler.fixed(i+0.1))
+    for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + DEPTH); i = mangler.fixed(i + STEP))
       sells[i] = newOrder('sell', i)
-    return { buys:buys, sells:sells }
+    return { buys: buys, sells: sells }
   }
 
   function getCancels(currentBook, newBook) {
@@ -38,24 +37,27 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   function subtract(map1, map2) {
     var difference = {}
-    Object.keys(map1).forEach(key => { if(!map2[key]) difference[key] = map1[key] })
+    Object.keys(map1).forEach(key => {
+      if (!map2[key]) difference[key] = map1[key]
+    })
     return difference
   }
 
   function concat(map1, map2) {
     var cat = []
-    Object.keys(map1).forEach(key => cat.push(map1[key]) )
-    Object.keys(map2).forEach(key => cat.push(map2[key]) )
+    Object.keys(map1).forEach(key => cat.push(map1[key]))
+    Object.keys(map2).forEach(key => cat.push(map2[key]))
     return cat
   }
 
-  listener.trade = function() {}
+  listener.trade = function () {
+  }
 
-  var busy = false
+  var busy           = false
   listener.priceband = bluebird.coroutine(function*(band) {
     try {
-      if(busy) return
-      busy = true
+      if (busy) return
+      busy            = true
       var orders      = account.getOpenOrders()
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(band.price)
@@ -63,11 +65,11 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       var cancels = getCancels(currentBook, newBook)
       var creates = getCreates(currentBook, newBook)
 
-      if(cancels.length) yield account.cancelOrders(cancels)
-      if(creates.length) yield account.createOrders(creates)
+      if (cancels.length) yield account.cancelOrders(cancels)
+      if (creates.length) yield account.createOrders(creates)
 
     }
-    catch(e) {
+    catch (e) {
       console.log(e)
     }
     finally {
@@ -76,10 +78,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   })
 
   function getCurrentBook(orders) {
-    var ordersByType = { buys:{}, sells:{} }
+    var ordersByType = { buys: {}, sells: {} }
     orders.forEach(order => {
-      if(order.orderType === 'LMT' && order.side === 'buy')  ordersByType.buys[order.price] = order
-      if(order.orderType === 'LMT' && order.side === 'sell') ordersByType.sells[order.price] = order
+      if (order.orderType === 'LMT' && order.side === 'buy')  ordersByType.buys[order.price] = order
+      if (order.orderType === 'LMT' && order.side === 'sell') ordersByType.sells[order.price] = order
     })
     return ordersByType
   }
