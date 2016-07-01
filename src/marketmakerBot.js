@@ -2,14 +2,13 @@ var bluebird  = require('bluebird')
 var sequencer = require('sequencer-js')()
 var assert    = require('affirm.js')
 var mangler   = require('mangler')
-var baseBot   = require('./baseBot')
 var botParams = require('./botParams')(process.argv[2])
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
   var baseurl = botParams.baseurl, wallet = botParams.wallet, depth = botParams.depth
   var SPREAD = 0.1
   var STEP = 0.1
-  var DEPTH = .5
+  var DEPTH = typeof(depth) === 'number' && depth > 0 || .5
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
@@ -51,21 +50,29 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   listener.trade = function() {}
+
   var busy = false
   listener.priceband = bluebird.coroutine(function*(band) {
-    if(busy) return
-    busy = true
-    var orders      = account.getOpenOrders()
-    var currentBook = getCurrentBook(orders)
-    var newBook     = createNewBook(band.price)
+    try {
+      if(busy) return
+      busy = true
+      var orders      = account.getOpenOrders()
+      var currentBook = getCurrentBook(orders)
+      var newBook     = createNewBook(band.price)
 
-    var cancels = getCancels(currentBook, newBook)
-    var creates = getCreates(currentBook, newBook)
+      var cancels = getCancels(currentBook, newBook)
+      var creates = getCreates(currentBook, newBook)
 
-    if(cancels.length) yield account.cancelOrders(cancels)
-    if(creates.length) yield account.createOrders(creates)
-    
-    busy = false
+      if(cancels.length) yield account.cancelOrders(cancels)
+      if(creates.length) yield account.createOrders(creates)
+
+    }
+    catch(e) {
+      console.log(e)
+    }
+    finally {
+      busy = false
+    }
   })
 
   function getCurrentBook(orders) {
