@@ -50,17 +50,22 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return cat
   }
 
-  listener.trade = function () {
-  }
+  listener.trade = bluebird.coroutine(function* (price) {
+    yield movePrice(price)
+  })
+
+  listener.priceband = bluebird.coroutine(function*(band) {
+    yield movePrice(band.price)
+  })
 
   var busy           = false
-  listener.priceband = bluebird.coroutine(function*(band) {
+  var movePrice = bluebird.coroutine(function*(price) {
     try {
       if (busy) return
       busy            = true
       var orders      = account.getOpenOrders()
       var currentBook = getCurrentBook(orders)
-      var newBook     = createNewBook(band.price)
+      var newBook     = createNewBook(price)
 
       var cancels = getCancels(currentBook, newBook)
       var creates = getCreates(currentBook, newBook)
