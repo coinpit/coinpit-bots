@@ -56,7 +56,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       orderType  : 'LMT',
       stopPrice  : 0.1,
       targetPrice: 0.1,
-      postOnly   : postOnly
+      postOnly   : postOnly,
+      spreadOnly : true
     }
   }
 
