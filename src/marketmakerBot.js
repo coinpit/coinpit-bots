@@ -69,10 +69,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
       var cancels = getCancels(currentBook, newBook)
       var creates = getCreates(currentBook, newBook)
-
-      if (cancels.length) yield account.cancelOrders(cancels)
-      if (creates.length) yield account.createOrders(creates)
-
+      
+      yield account.patchOrders({cancels: cancels, creates: creates})
     }
     catch (e) {
       console.log(e)
@@ -81,7 +79,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       busy = false
     }
   })
-
+   
   function getCurrentBook(orders) {
     var ordersByType = { buys: {}, sells: {} }
     orders.forEach(order => {
