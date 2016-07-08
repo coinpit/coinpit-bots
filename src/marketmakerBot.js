@@ -26,13 +26,13 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function getCancels(currentBook, newBook) {
     var d1 = subtract(currentBook.buys, newBook.buys)
     var d2 = subtract(currentBook.sells, newBook.sells)
-    return concat(d1, d2)
+    return { buys: d1, sells: d2 }
   }
 
   function getCreates(currentBook, newBook) {
     var d1 = subtract(newBook.buys, currentBook.buys)
     var d2 = subtract(newBook.sells, currentBook.sells)
-    return concat(d1, d2)
+    return { buys: d1, sells: d2 }
   }
 
   function subtract(map1, map2) {
@@ -50,7 +50,31 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return cat
   }
 
-  listener.trade = bluebird.coroutine(function* (price) {
+  function generatePath(cancels, creates) {
+    var buys  = replaceCancelToUpdate(cancels.buys, creates.buys)
+    var sells = replaceCancelToUpdate(cancels.sells, creates.sells)
+    return { cancels: buys.cancels.concat(sells.cancels), updates: buys.updates.concat(sells.updates), creates: buys.creates.concat(sells.creates) }
+  }
+
+  function replaceCancelToUpdate(cancels, creates) {
+    cancels     = Object.keys(cancels).map(price => cancels[price])
+    creates     = Object.keys(creates).map(price => creates[price])
+    var updates = []
+    var cancel  = cancels.shift()
+    while (cancel) {
+      if (creates.length === 0) {
+        cancels.push(cancel)
+        break
+      }
+      var create   = creates.shift()
+      cancel.price = create.price
+      updates.push(cancel)
+      cancel = cancels.shift()
+    }
+    return { cancels: cancels, updates: updates, creates: creates }
+  }
+
+  listener.trade = bluebird.coroutine(function*(price) {
     yield movePrice(price)
   })
 
@@ -58,7 +82,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     yield movePrice(band.price)
   })
 
-  var busy           = false
+  var busy      = false
   var movePrice = bluebird.coroutine(function*(price) {
     try {
       if (busy) return
@@ -69,17 +93,16 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
       var cancels = getCancels(currentBook, newBook)
       var creates = getCreates(currentBook, newBook)
-      
-      yield account.patchOrders({cancels: cancels, creates: creates})
-    }
-    catch (e) {
+      var patch   = generatePath(cancels, creates)
+      yield account.patchOrders(patch)
+    } catch (e) {
       console.log(e)
     }
     finally {
       busy = false
     }
   })
-   
+
   function getCurrentBook(orders) {
     var ordersByType = { buys: {}, sells: {} }
     orders.forEach(order => {
