@@ -50,7 +50,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return cat
   }
 
-  function generatePath(cancels, creates) {
+  function generatePatch(cancels, creates) {
     var buys  = replaceCancelToUpdate(cancels.buys, creates.buys)
     var sells = replaceCancelToUpdate(cancels.sells, creates.sells)
     return { cancels: buys.cancels.concat(sells.cancels), updates: buys.updates.concat(sells.updates), creates: buys.creates.concat(sells.creates) }
@@ -93,7 +93,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
       var cancels = getCancels(currentBook, newBook)
       var creates = getCreates(currentBook, newBook)
-      var patch   = generatePath(cancels, creates)
+      var patch   = generatePatch(cancels, creates)
+      updateTargets(patch.updates, currentBook.targets, price)
       yield account.patchOrders(patch)
     } catch (e) {
       console.log(e)
@@ -103,11 +104,20 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     }
   })
 
+  function updateTargets(updates, targets, price) {
+    var bid = mangler.fixed(price - SPREAD), ask = mangler.fixed(price + SPREAD)
+    targets.forEach(order => {
+      order.price = order.side === 'buy' ? bid : ask
+      updates.push(order)
+    })
+  }
+
   function getCurrentBook(orders) {
-    var ordersByType = { buys: {}, sells: {} }
+    var ordersByType = { buys: {}, sells: {}, targets: [] }
     orders.forEach(order => {
       if (order.orderType === 'LMT' && order.side === 'buy')  ordersByType.buys[order.price] = order
       if (order.orderType === 'LMT' && order.side === 'sell') ordersByType.sells[order.price] = order
+      if (order.orderType === 'TGT')  ordersByType.targets.push(order)
     })
     return ordersByType
   }
