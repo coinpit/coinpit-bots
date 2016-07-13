@@ -10,6 +10,7 @@ module.exports = function (walletFileName) {
   var targetPoints = (process.env.TGT || 1) - 0
   var spread       = (process.env.SPREAD || 0.1) - 0
   var step         = (process.env.STEP || 0.1) - 0
+  var strat        = (process.env.STRAT || 'random')
 
   return {
     baseurl: baseurl,
@@ -18,6 +19,7 @@ module.exports = function (walletFileName) {
     stop   : stopPoints,
     target : targetPoints,
     spread : spread,
-    step   : step
+    step   : step,
+    strat  : strat
   }
 }

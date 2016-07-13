@@ -8,19 +8,43 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   var DEPTH       = botParams.depth
   var SPREAD      = botParams.spread
   var STEP        = botParams.step
+  var STRAT       = botParams.strat
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
 
   var listener = {}
 
-  function createNewBook(price) {
+  // strategy names and function calls
+  var strategies = { 'collar': collar, 'random': random }
+
+  /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
+  function collar(price) {
     var buys = {}, sells = {}
     for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - DEPTH); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i)
     for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + DEPTH); i = mangler.fixed(i + STEP))
       sells[i] = newOrder('sell', i)
     return { buys: buys, sells: sells }
+  }
+
+  /** random strategy assumes best results on random order spacing **/
+  function random(price) {
+    var buys = {}, sells = {}
+    var bid = mangler.fixed(price - SPREAD), ask = mangler.fixed(price + SPREAD)
+    for(var i = 0; i < DEPTH;) {
+      var buyOrder = newRandomOrder('buy', price, i)
+      buys[buyOrder.price] = buyOrder
+      var sellOrder = newRandomOrder('sell', price, i)
+      sells[sellOrder.price] = sellOrder
+      i += buyOrder.quantity + sellOrder.quantity
+    }
+    return { buys: buys, sells: sells }
+  }
+
+  function createNewBook(price) {
+    var strategy = strategies[STRAT] || strategies['collar']
+    return strategy(price)
   }
 
   function getCancels(currentBook, newBook) {
@@ -122,17 +146,29 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return ordersByType
   }
 
-  function newOrder(side, price) {
+  function newRandomOrder(side, price, distance) {
+    var size = getRandomInt(1, 4)
+    var buyStep = mangler.fixed(getRandomInt(1, 4)/10)
+    var delta = mangler.fixed((side == 'buy' ? -1 : 1) * (SPREAD + distance))
+    var orderPrice = mangler.fixed(price + delta)
+    return newOrder(side, orderPrice, size)
+  }
+
+  function newOrder(side, price, quantity) {
     return {
       clientid   : account.newUUID(),
       userid     : account.userid,
       side       : side,
-      quantity   : 1,
+      quantity   : quantity || 1,
       price      : mangler.fixed(price),
       orderType  : 'LMT',
       stopPrice  : botParams.stop,
       targetPrice: botParams.target
     }
+  }
+
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
   }
 
   require('./coinpitFeed')(listener, baseurl)
