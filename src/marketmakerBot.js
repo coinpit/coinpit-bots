@@ -15,7 +15,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   var listener = {}
 
-  console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STRAT': STRAT},null, 2))
+  console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': botParams.stopPoints, 'TGT': botParams.targetPoints, 'STRAT': STRAT},null, 2))
   // strategy names and function calls
   var strategies = { 'collar': collar, 'random': random }
 
@@ -164,8 +164,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       quantity   : quantity || 1,
       price      : mangler.fixed(price),
       orderType  : 'LMT',
-      stopPrice  : botParams.stop,
-      targetPrice: botParams.target
+      stopPrice  : botParams.stopPoints,
+      targetPrice: botParams.targetPoints
     }
   }
 
