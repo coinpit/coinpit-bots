@@ -21,10 +21,11 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
     var buys = {}, sells = {}
+    var qty = getRandomInt(2,11)
     for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - DEPTH); i = mangler.fixed(i - STEP))
-      buys[i] = newOrder('buy', i)
+      buys[i] = newOrder('buy', i, qty)
     for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + DEPTH); i = mangler.fixed(i + STEP))
-      sells[i] = newOrder('sell', i)
+      sells[i] = newOrder('sell', i, qty)
     return { buys: buys, sells: sells }
   }
 
@@ -33,9 +34,9 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     var buys = {}, sells = {}
     var bid = mangler.fixed(price - SPREAD), ask = mangler.fixed(price + SPREAD)
     for(var i = 0; i < DEPTH;) {
-      var buyOrder = newRandomOrder('buy', price, i)
+      var buyOrder = newRandomOrder('buy', price, Math.floor(i/10))
       buys[buyOrder.price] = buyOrder
-      var sellOrder = newRandomOrder('sell', price, i)
+      var sellOrder = newRandomOrder('sell', price, Math.floor(i/10))
       sells[sellOrder.price] = sellOrder
       i += buyOrder.quantity + sellOrder.quantity
     }
@@ -147,7 +148,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function newRandomOrder(side, price, distance) {
-    var size = getRandomInt(1, 4)
+    var size = getRandomInt(2, 12)
     var buyStep = mangler.fixed(getRandomInt(1, 4)/10)
     var delta = mangler.fixed((side == 'buy' ? -1 : 1) * (SPREAD + distance))
     var orderPrice = mangler.fixed(price + delta)
