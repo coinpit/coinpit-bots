@@ -15,13 +15,14 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   var listener = {}
 
+  console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STRAT': STRAT},null, 2))
   // strategy names and function calls
   var strategies = { 'collar': collar, 'random': random }
 
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
     var buys = {}, sells = {}
-    var qty = getRandomInt(2,11)
+    var qty = 10
     for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - DEPTH); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, qty)
     for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + DEPTH); i = mangler.fixed(i + STEP))
