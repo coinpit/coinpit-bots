@@ -14,8 +14,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
-
-  var listener = {}
+  var currentBand
+  var listener    = {}
 
   console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT }, null, 2))
   // strategy names and function calls
@@ -103,10 +103,12 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   listener.trade = bluebird.coroutine(function*(price) {
-    yield movePrice(price)
+    if (currentBand)
+      yield movePrice(currentBand.price)
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
+    currentBand = band
     yield movePrice(band.price)
   })
 
