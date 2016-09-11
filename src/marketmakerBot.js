@@ -23,11 +23,19 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
-    var buys = {}, sells = {}
-    var qty  = 10
-    for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - DEPTH); i = mangler.fixed(i - STEP))
+    var buys            = {}, sells = {}
+    var qty             = 10
+    var openOrders      = account.getOpenOrders()
+    var stops           = openOrders.filter(order => order.orderType === 'STP')
+    var availableMargin = account.calculateAvailableMargin(stops)
+    if (availableMargin <= 0) return { buys: buys, sells: sells }
+    var instrument         = account.config.instrument
+    var satoshiPerQuantity = (STP + instrument.stopcushion) * instrument.ticksperpoint * instrument.tickvalue
+    var max                = Math.floor(availableMargin / (satoshiPerQuantity * qty * 2))
+    var depth              = Math.min(DEPTH, max * STEP)
+    for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - depth); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, qty)
-    for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + DEPTH); i = mangler.fixed(i + STEP))
+    for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + depth); i = mangler.fixed(i + STEP))
       sells[i] = newOrder('sell', i, qty)
     return { buys: buys, sells: sells }
   }
