@@ -108,6 +108,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
+    if (!band.price) return
     currentBand = band
     yield movePrice(band.price)
   })
