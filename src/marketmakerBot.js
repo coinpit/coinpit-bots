@@ -33,9 +33,18 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     var satoshiPerQuantity = (STP + instrument.stopcushion) * instrument.ticksperpoint * instrument.tickvalue
     var max                = Math.floor(availableMargin / (satoshiPerQuantity * qty * 2))
     var depth              = Math.min(DEPTH, max * STEP)
-    for (var i = mangler.fixed(price - SPREAD); i > mangler.fixed(price - SPREAD - depth); i = mangler.fixed(i - STEP))
+    var buySpread          = SPREAD, sellSpread = SPREAD
+    var position           = account.getPositions()[instrument.symbol]
+
+    if (position) {
+      var adjustedSpread = mangler.fixed(Math.floor(Math.abs(position.quantity) / 100) / 5)
+      buySpread = position.quantity > 0 ? mangler.fixed(buySpread + adjustedSpread) : buySpread
+      sellSpread = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
+    }
+
+    for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, qty)
-    for (var i = mangler.fixed(price + SPREAD); i < mangler.fixed(price + SPREAD + depth); i = mangler.fixed(i + STEP))
+    for (var i = mangler.fixed(price + sellSpread); i < mangler.fixed(price + sellSpread + depth); i = mangler.fixed(i + STEP))
       sells[i] = newOrder('sell', i, qty)
     return { buys: buys, sells: sells }
   }
