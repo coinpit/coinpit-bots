@@ -24,7 +24,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
     var buys            = {}, sells = {}
-    var qty             = 10
+    var qty             = 5
     var openOrders      = account.getOpenOrders()
     var stops           = openOrders.filter(order => order.orderType === 'STP')
     var availableMargin = account.calculateAvailableMargin(stops)
