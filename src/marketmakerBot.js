@@ -1,5 +1,6 @@
 var bluebird  = require('bluebird')
 var mangler   = require('mangler')
+var affirm    = require('affirm.js')
 var botParams = require('./botParams')(process.argv[2])
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
@@ -16,6 +17,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   account.logging = true
   var currentBand
   var listener    = {}
+  var tick = mangler.fixed(1/account.config.instrument.ticksperpoint)
+
+  affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
+  affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
 
   console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT }, null, 2))
   // strategy names and function calls
@@ -38,8 +43,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
     if (position) {
       var adjustedSpread = mangler.fixed(Math.floor(Math.abs(position.quantity) / 100) / 5)
-      buySpread = position.quantity > 0 ? mangler.fixed(buySpread + adjustedSpread) : buySpread
-      sellSpread = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
+      buySpread          = position.quantity > 0 ? mangler.fixed(buySpread + adjustedSpread) : buySpread
+      sellSpread         = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
     }
 
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
@@ -153,7 +158,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   })
 
   function updateTargets(updates, targets, price) {
-    var bid = mangler.fixed(price - SPREAD), ask = mangler.fixed(price + SPREAD)
+    var step = Math.min(SPREAD, STEP)
+    var bid  = mangler.fixed(price - SPREAD + step), ask = mangler.fixed(price + SPREAD - step)
     targets.forEach(order => {
       order.price = order.side === 'buy' ? bid : ask
       updates.push(order)
