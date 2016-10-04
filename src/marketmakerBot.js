@@ -17,14 +17,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   account.logging = true
   var currentBand
   var listener    = {}
-  var tick = mangler.fixed(1/account.config.instrument.ticksperpoint)
-
-  affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
-  affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-
-  console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT }, null, 2))
   // strategy names and function calls
-  var strategies = { 'collar': collar, 'random': random }
+  var strategies  = { 'collar': collar, 'random': random }
 
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
@@ -124,22 +118,40 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return { cancels: cancels, updates: updates, creates: creates }
   }
 
+  listener.orderPatch = bluebird.coroutine(function*(response) {
+    for (var i = 0; i < response.result.length; i++) {
+      var eachResponse = response.result[i];
+      if (eachResponse.error) {
+        return jobs.merge = true
+      }
+      if (eachResponse.op === 'merge' && !currentBand.price) {
+        jobs.movePrice = true
+      }
+    }
+  })
+
+  listener.userMessage = bluebird.coroutine(function*() {
+    jobs.merge = true
+  })
+
   listener.trade = bluebird.coroutine(function*(price) {
-    if (currentBand)
-      yield movePrice(currentBand.price)
+      jobs.movePrice = true
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
     if (!band.price) return
-    currentBand = band
-    yield movePrice(band.price)
+    currentBand   = band
+    jobs.movePrice = true
   })
 
-  var busy      = false
-  var movePrice = bluebird.coroutine(function*(price) {
+  var jobs      = { movePrice: true, merge: true }
+  // var busy      = false
+  function* movePrice() {
+    if (!jobs.movePrice) return
+    var price = currentBand.price
+    if (isNaN(price)) return console.log('invalid price', price)
+    jobs.movePrice  = false
     try {
-      if (busy) return
-      busy            = true
       var orders      = account.getOpenOrders()
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(price)
@@ -152,10 +164,23 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     } catch (e) {
       console.log(e)
     }
-    finally {
-      busy = false
+  }
+
+  function* mergePositions() {
+    if(!jobs.merge) return
+    jobs.merge =false
+    try {
+      var orders  = account.getOpenOrders()
+      var targets = getCurrentBook(orders).targets
+      var stops   = getCurrentBook(orders).stops
+      if (targets.length > 10) {
+        var merges = stops.slice(0, 15).concat(targets.slice(0, 15))
+        yield account.patchOrders({ merge: merges.map(order=>order.uuid) })
+      }
+    } catch (e) {
+      console.log(e)
     }
-  })
+  }
 
   function updateTargets(updates, targets, price) {
     var step = Math.min(SPREAD, STEP)
@@ -167,11 +192,12 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function getCurrentBook(orders) {
-    var ordersByType = { buys: {}, sells: {}, targets: [] }
+    var ordersByType = { buys: {}, sells: {}, targets: [], stops: [] }
     orders.forEach(order => {
       if (order.orderType === 'LMT' && order.side === 'buy')  ordersByType.buys[order.price] = order
       if (order.orderType === 'LMT' && order.side === 'sell') ordersByType.sells[order.price] = order
       if (order.orderType === 'TGT')  ordersByType.targets.push(order)
+      if (order.orderType === 'STP')  ordersByType.stops.push(order)
     })
     return ordersByType
   }
@@ -201,8 +227,29 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
-  require('./coinpitFeed')(listener, baseurl)
+  var moveAndMerge = bluebird.coroutine(function* (){
+    try {
+      yield* movePrice()
+      yield* mergePositions()
+    } catch (e) {
+    } finally{
+      setTimeout(moveAndMerge, 100)
+    }
+  })
 
+  function* init() {
+    var tick = mangler.fixed(1 / account.config.instrument.ticksperpoint)
+    affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
+    affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
+    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT }, null, 2))
+    require('./coinpitFeed')(listener, account.socket)
+    var info = yield account.loginless.rest.get('/api/info')
+    console.log('current price', info)
+    currentBand = {price:info[account.config.instrument.symbol].lastPrice}
+    yield moveAndMerge()
+  }
+
+  yield* init()
 })
 
 bot(botParams)
