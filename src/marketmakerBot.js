@@ -119,14 +119,18 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   listener.orderPatch = bluebird.coroutine(function*(response) {
-    for (var i = 0; i < response.result.length; i++) {
-      var eachResponse = response.result[i];
-      if (eachResponse.error) {
-        return jobs.merge = true
+    try {
+      for (var i = 0; i < response.result.length; i++) {
+        var eachResponse = response.result[i];
+        if (eachResponse.error) {
+          return jobs.merge = true
+        }
+        if (eachResponse.op === 'merge' && !currentBand.price) {
+          jobs.movePrice = true
+        }
       }
-      if (eachResponse.op === 'merge' && !currentBand.price) {
-        jobs.movePrice = true
-      }
+    } catch (e) {
+      console.log(e)
     }
   })
 
@@ -139,9 +143,13 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
-    if (!band.price) return
-    currentBand   = band
-    jobs.movePrice = true
+    try {
+      if (!band.price) return
+      currentBand    = band
+      jobs.movePrice = true
+    } catch (e) {
+      console.log(e)
+    }
   })
 
   var jobs      = { movePrice: true, merge: true }
@@ -245,7 +253,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     require('./coinpitFeed')(listener, account.socket)
     var info = yield account.loginless.rest.get('/api/info')
     console.log('current price', info)
-    currentBand = {price:info[account.config.instrument.symbol].lastPrice}
+    currentBand = {price:info[account.config.instrument.symbol].indexPrice}
     yield moveAndMerge()
   }
 
