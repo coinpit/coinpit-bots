@@ -157,7 +157,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* movePrice() {
     if (!jobs.movePrice) return
     var price = currentBand.price
-    if (isNaN(price)) return console.log('invalid price', price)
+    if (isNaN(price)) {
+      jobs.movePrice  = false
+      return console.log('invalid price', price)
+    }
     jobs.movePrice  = false
     try {
       var orders      = account.getOpenOrders()
@@ -253,7 +256,9 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     require('./coinpitFeed')(listener, account.socket)
     var info = yield account.loginless.rest.get('/api/info')
     console.log('current price', info)
-    currentBand = {price:info[account.config.instrument.symbol].indexPrice}
+    var price = info[account.config.instrument.symbol].indexPrice
+
+    currentBand = {price:price}
     yield moveAndMerge()
   }
 
