@@ -37,8 +37,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
     if (position) {
       var adjustedSpread = mangler.fixed(Math.floor(Math.abs(position.quantity) / 100) / 5)
-      buySpread          = position.quantity > 0 ? mangler.fixed(buySpread + adjustedSpread) : mangler.fixed(buySpread - adjustedSpread)
-      sellSpread         = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : mangler.fixed(sellSpread - adjustedSpread)
+      buySpread          = position.quantity > 0 ? mangler.fixed(buySpread + adjustedSpread) : buySpread
+      sellSpread         = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
     }
 
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
