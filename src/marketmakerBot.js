@@ -183,14 +183,27 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     try {
       var orders  = account.getOpenOrders()
       var targets = getCurrentBook(orders).targets
-      var stops   = getCurrentBook(orders).stops
-      if (targets.length > 10) {
-        var merges = stops.slice(0, 15).concat(targets.slice(0, 15))
-        yield account.patchOrders({ merge: merges.map(order=>order.uuid) })
+      if (targets.length > 50) {
+        targets = targets.sort(quantityLowToHigh)
+        targets = targets.slice(0,15)
+        var merges = []
+        targets.forEach(target => {
+          merges.push(target.uuid)
+          merges.push(target.oco)
+        })
+        yield account.patchOrders({ merge: merges})
       }
     } catch (e) {
       console.log(e)
     }
+  }
+
+  function quantityLowToHigh(o1,o2){
+    return toBeFilled(o1) - toBeFilled(o2)
+  }
+
+  function toBeFilled(order){
+    return order.quantity -(order.filled || 0) - (order.cancelled || 0)
   }
 
   function updateTargets(updates, targets, price) {
