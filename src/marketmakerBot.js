@@ -12,6 +12,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   var STRAT       = botParams.strat
   var STP         = botParams.stop
   var TGT         = botParams.target
+  var QTY         = botParams.quantity
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
   account.logging = true
@@ -23,17 +24,16 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
     var buys            = {}, sells = {}
-    var qty             = 5
     var openOrders      = account.getOpenOrders()
     var stops           = openOrders.filter(order => order.orderType === 'STP')
     var availableMargin = account.calculateAvailableMargin(stops)
     if (availableMargin <= 0) return { buys: buys, sells: sells }
-    var instrument         = account.config.instrument
-    var satoshiPerQuantity = (STP + instrument.stopcushion) * instrument.ticksperpoint * instrument.tickvalue
-    var max                = Math.floor(availableMargin / (satoshiPerQuantity * qty * 2))
+    var inst               = instrument()
+    var satoshiPerQuantity = (STP + inst.stopcushion) * inst.ticksperpoint * inst.tickvalue
+    var max                = Math.floor(availableMargin / (satoshiPerQuantity * QTY * 2))
     var depth              = Math.min(DEPTH, max * STEP)
     var buySpread          = SPREAD, sellSpread = SPREAD
-    var position           = account.getPositions()[instrument.symbol]
+    var position           = account.getPositions()[inst.symbol]
 
     if (position) {
       var adjustedSpread = mangler.fixed(Math.floor(Math.abs(position.quantity) / 100) / 5)
@@ -42,9 +42,9 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     }
 
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
-      buys[i] = newOrder('buy', i, qty)
+      buys[i] = newOrder('buy', i, QTY)
     for (var i = mangler.fixed(price + sellSpread); i < mangler.fixed(price + sellSpread + depth); i = mangler.fixed(i + STEP))
-      sells[i] = newOrder('sell', i, qty)
+      sells[i] = newOrder('sell', i, QTY)
     return { buys: buys, sells: sells }
   }
 
@@ -139,7 +139,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   })
 
   listener.trade = bluebird.coroutine(function*(price) {
-      jobs.movePrice = true
+    jobs.movePrice = true
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
@@ -152,16 +152,16 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     }
   })
 
-  var jobs      = { movePrice: true, merge: true }
+  var jobs = { movePrice: true, merge: true }
   // var busy      = false
   function* movePrice() {
     if (!jobs.movePrice) return
     var price = currentBand.price
     if (isNaN(price)) {
-      jobs.movePrice  = false
+      jobs.movePrice = false
       return console.log('invalid price', price)
     }
-    jobs.movePrice  = false
+    jobs.movePrice = false
     try {
       var orders      = account.getOpenOrders()
       var currentBook = getCurrentBook(orders)
@@ -178,32 +178,32 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function* mergePositions() {
-    if(!jobs.merge) return
-    jobs.merge =false
+    if (!jobs.merge) return
+    jobs.merge = false
     try {
       var orders  = account.getOpenOrders()
       var targets = getCurrentBook(orders).targets
       if (targets.length > 50) {
-        targets = targets.sort(quantityLowToHigh)
-        targets = targets.slice(0,15)
+        targets    = targets.sort(quantityLowToHigh)
+        targets    = targets.slice(0, 15)
         var merges = []
         targets.forEach(target => {
           merges.push(target.uuid)
           merges.push(target.oco)
         })
-        yield account.patchOrders({ merge: merges})
+        yield account.patchOrders({ merge: merges })
       }
     } catch (e) {
       console.log(e)
     }
   }
 
-  function quantityLowToHigh(o1,o2){
+  function quantityLowToHigh(o1, o2) {
     return toBeFilled(o1) - toBeFilled(o2)
   }
 
-  function toBeFilled(order){
-    return order.quantity -(order.filled || 0) - (order.cancelled || 0)
+  function toBeFilled(order) {
+    return order.quantity - (order.filled || 0) - (order.cancelled || 0)
   }
 
   function updateTargets(updates, targets, price) {
@@ -251,28 +251,32 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
-  var moveAndMerge = bluebird.coroutine(function* (){
+  var moveAndMerge = bluebird.coroutine(function*() {
     try {
       yield* movePrice()
       yield* mergePositions()
     } catch (e) {
-    } finally{
+    } finally {
       setTimeout(moveAndMerge, 100)
     }
   })
 
   function* init() {
-    var tick = mangler.fixed(1 / account.config.instrument.ticksperpoint)
+    var tick = mangler.fixed(1 / instrument().ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT }, null, 2))
+    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY':QTY }, null, 2))
     require('./coinpitFeed')(listener, account.socket)
     var info = yield account.loginless.rest.get('/api/info')
     console.log('current price', info)
-    var price = info[account.config.instrument.symbol].indexPrice
+    var price = info[instrument().symbol].indexPrice
 
-    currentBand = {price:price}
+    currentBand = { price: price }
     yield moveAndMerge()
+  }
+
+  function instrument() {
+    return account.config.instrument[account.config.default.instrument]
   }
 
   yield* init()

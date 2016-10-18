@@ -1,6 +1,6 @@
 {
   "name": "coinpit-bots",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "bots for coinpit app",
   "scripts": {
     "test": "mocha specs/*"
@@ -29,9 +29,10 @@
     "affirm.js": "^1.0.0",
     "bitcoinutil": "^1.1.4",
     "bluebird": "^3.4.0",
-    "coinpit-client": "^0.1.8",
+    "coinpit-client": "^1.0.0",
     "mangler": "^1.0.1",
     "pusher-client": "^1.1.0",
+    "rest.js": "0.0.8",
     "sequencer-js": "0.0.2",
     "socket.io-client": "^1.4.6"
   },

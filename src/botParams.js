@@ -10,16 +10,18 @@ module.exports = function (walletFileName) {
   var targetPoints = (process.env.TGT || 1) - 0
   var spread       = (process.env.SPREAD || 0.1) - 0
   var step         = (process.env.STEP || 0.1) - 0
-  var strat        = (process.env.STRAT || 'random')
+  var strat        = (process.env.STRAT || 'collar')
+  var quantity     = (process.env.QTY || 5) - 0
 
   return {
-    baseurl: baseurl,
-    depth  : depth,
-    wallet : wallet,
-    stop   : stopPoints,
-    target : targetPoints,
-    spread : spread,
-    step   : step,
-    strat  : strat
+    baseurl : baseurl,
+    depth   : depth,
+    wallet  : wallet,
+    stop    : stopPoints,
+    target  : targetPoints,
+    spread  : spread,
+    step    : step,
+    strat   : strat,
+    quantity: quantity
   }
 }
