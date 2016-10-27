@@ -144,7 +144,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   listener.priceband = bluebird.coroutine(function*(band) {
     try {
-      if (!band.price) return
+      if (!band.price) return console.log('bad band ', band)
       currentBand    = band
       jobs.movePrice = true
     } catch (e) {
