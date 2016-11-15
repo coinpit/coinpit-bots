@@ -12,6 +12,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   var STRAT       = botParams.strat
   var STP         = botParams.stop
   var TGT         = botParams.target
+  var CROSS       = botParams.cross
   var QTY         = botParams.quantity
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
@@ -243,7 +244,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       price      : mangler.fixed(price),
       orderType  : 'LMT',
       stopPrice  : STP,
-      targetPrice: TGT
+      targetPrice: TGT,
+      crossMargin: CROSS
     }
   }
 
@@ -265,7 +267,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     var tick = mangler.fixed(1 / instrument().ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY':QTY }, null, 2))
+    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY }, null, 2))
     require('./coinpitFeed')(listener, account.socket)
     var info = yield account.loginless.rest.get('/api/info')
     console.log('current price', info)
