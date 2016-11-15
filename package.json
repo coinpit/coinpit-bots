@@ -29,7 +29,7 @@
     "affirm.js": "^1.0.0",
     "bitcoinutil": "^1.1.4",
     "bluebird": "^3.4.0",
-    "coinpit-client": "^1.0.0",
+    "coinpit-client": "^1.0.1",
     "mangler": "^1.0.1",
     "pusher-client": "^1.1.0",
     "rest.js": "0.0.8",
