@@ -31,3 +31,4 @@ STEP (default 0.1): Defined step between each price. In the above example buys w
 QTY (default 5): Quantity in each order. 
 STP (default 10): Stop Points when placing an order 
 TGT (default 1): profit target.
+CROSS (default false): enables cross margin. 
