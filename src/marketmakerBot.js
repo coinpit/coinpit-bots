@@ -2,6 +2,8 @@ var bluebird  = require('bluebird')
 var mangler   = require('mangler')
 var affirm    = require('affirm.js')
 var botParams = require('./botParams')(process.argv[2])
+var _         = require('lodash')
+var util      = require('util')
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
   var baseurl     = botParams.baseurl
@@ -14,8 +16,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   var TGT         = botParams.target
   var CROSS       = botParams.cross
   var QTY         = botParams.quantity
+  var SYMBOL      = botParams.symbol
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
+  SYMBOL          = SYMBOL || account.config.default.instrument
   account.logging = true
   var currentBand
   var listener    = {}
@@ -26,10 +30,9 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function collar(price) {
     var buys            = {}, sells = {}
     var openOrders      = account.getOpenOrders()
-    var stops           = openOrders.filter(order => order.orderType === 'STP')
-    var availableMargin = account.calculateAvailableMargin(stops)
+    var availableMargin = account.calculateAvailableMarginIfCrossShifted(openOrders)
     if (availableMargin <= 0) return { buys: buys, sells: sells }
-    var inst               = instrument()
+    var inst               = instrument(SYMBOL)
     var satoshiPerQuantity = (STP + inst.stopcushion) * inst.ticksperpoint * inst.tickvalue
     var max                = Math.floor(availableMargin / (satoshiPerQuantity * QTY * 2))
     var depth              = Math.min(DEPTH, max * STEP)
@@ -131,7 +134,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
         }
       }
     } catch (e) {
-      console.log(e)
+      util.log(e);
+      util.log(e.stack)
     }
   })
 
@@ -145,11 +149,12 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   listener.priceband = bluebird.coroutine(function*(band) {
     try {
-      if (!band.price) return console.log('bad band ', band)
-      currentBand    = band
+      if (!band) return console.log('bad band ', band)
+      currentBand    = band[SYMBOL]
       jobs.movePrice = true
     } catch (e) {
-      console.log(e)
+      util.log(e);
+      util.log(e.stack)
     }
   })
 
@@ -164,7 +169,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     }
     jobs.movePrice = false
     try {
-      var orders      = account.getOpenOrders()
+      var orders      = _.toArray(account.getOpenOrders()[SYMBOL])
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(price)
 
@@ -172,9 +177,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       var creates = getCreates(currentBook, newBook)
       var patch   = generatePatch(cancels, creates)
       updateTargets(patch.updates, currentBook.targets, price)
-      yield account.patchOrders(patch)
+      yield account.patchOrders(SYMBOL, patch)
     } catch (e) {
-      console.log(e)
+      util.log(e);
+      util.log(e.stack)
     }
   }
 
@@ -182,7 +188,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     if (!jobs.merge) return
     jobs.merge = false
     try {
-      var orders  = account.getOpenOrders()
+      var orders  = _.toArray(account.getOpenOrders()[SYMBOL])
       var targets = getCurrentBook(orders).targets
       if (targets.length > 50) {
         targets    = targets.sort(quantityLowToHigh)
@@ -195,7 +201,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
         yield account.patchOrders({ merge: merges })
       }
     } catch (e) {
-      console.log(e)
+      util.log(e)
+      util.log(e.stack)
     }
   }
 
@@ -245,7 +252,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       orderType  : 'LMT',
       stopPrice  : STP,
       targetPrice: TGT,
-      crossMargin: CROSS
+      crossMargin: CROSS,
+      instrument : SYMBOL
     }
   }
 
@@ -258,27 +266,29 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       yield* movePrice()
       yield* mergePositions()
     } catch (e) {
+      util.log(e.stack)
     } finally {
       setTimeout(moveAndMerge, 100)
     }
   })
 
   function* init() {
-    var tick = mangler.fixed(1 / instrument().ticksperpoint)
+    var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
     console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY }, null, 2))
     require('./coinpitFeed')(listener, account.socket)
-    var info = yield account.loginless.rest.get('/api/info')
-    console.log('current price', info)
-    var price = info[instrument().symbol].indexPrice
+    var info  = yield account.loginless.rest.get('/api/info')
+    // console.log('current price', info)
+    var price = info[SYMBOL].indexPrice
 
     currentBand = { price: price }
     yield moveAndMerge()
   }
 
-  function instrument() {
-    return account.config.instrument[account.config.default.instrument]
+  function instrument(symbol) {
+
+    return account.config.instrument[symbol]
   }
 
   yield* init()

@@ -16,3 +16,10 @@ deployment:
       - docker build -t coinpit/coinpit-bots:1.0.0 .
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push coinpit/coinpit-bots
+  multi-instrument:
+    branch: multi-instrument
+    commands:
+      - docker info
+      - docker build -t coinpit/coinpit-bots:multi-instrument .
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push coinpit/coinpit-bots
