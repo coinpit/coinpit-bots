@@ -30,6 +30,9 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function collar(price) {
     var buys            = {}, sells = {}
     var openOrders      = account.getOpenOrders()
+    Object.keys(openOrders).forEach(symbol => Object.keys(openOrders[symbol]).forEach(uuid=>{
+      if(openOrders[symbol][uuid].orderType !== 'STP') delete openOrders[symbol][uuid]
+    }))
     var availableMargin = account.calculateAvailableMarginIfCrossShifted(openOrders)
     if (availableMargin <= 0) return { buys: buys, sells: sells }
     var inst               = instrument(SYMBOL)
