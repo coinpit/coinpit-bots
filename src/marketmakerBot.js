@@ -180,7 +180,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       var creates = getCreates(currentBook, newBook)
       var patch   = generatePatch(cancels, creates)
       updateTargets(patch.updates, currentBook.targets, price)
-      yield account.patchOrders(SYMBOL, patch)
+      yield account.patchOrders(patch)
     } catch (e) {
       util.log(e);
       util.log(e.stack)
