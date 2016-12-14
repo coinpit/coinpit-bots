@@ -1,46 +1,42 @@
 {
-  "name": "coinpit-bots",
-  "version": "1.0.0",
-  "description": "bots for coinpit app",
-  "scripts": {
+  "name"           : "coinpit-bots",
+  "version"        : "1.0.0",
+  "description"    : "bots for coinpit app",
+  "scripts"        : {
     "test": "mocha specs/*"
   },
-  "engines": {
+  "engines"        : {
     "node": ">= 4.0.0"
   },
-  "repository": {
+  "repository"     : {
     "type": "git",
-    "url": "git+https://github.com/coinpit/coinpit-bots.git"
+    "url" : "git+https://github.com/coinpit/coinpit-bots.git"
   },
-  "bugs": {
+  "bugs"           : {
     "url": "https://github.com/coinpit/coinpit-bots/issues"
   },
-  "homepage": "https://github.com/coinpit/coinpit-bots#readme",
-  "keywords": [
-    "bot",
-    "bots",
-    "simulators",
-    "client",
-    "example"
+  "homepage"       : "https://github.com/coinpit/coinpit-bots#readme",
+  "keywords"       : [
+    "bot", "bots", "simulators", "client", "example"
   ],
-  "author": "coinpit",
-  "license": "MIT",
-  "dependencies": {
-    "affirm.js": "^1.0.0",
-    "bitcoinutil": "^1.1.4",
-    "bluebird": "^3.4.0",
+  "author"         : "coinpit",
+  "license"        : "MIT",
+  "dependencies"   : {
+    "affirm.js"       : "^1.0.0",
+    "bitcoinutil"     : "^1.1.4",
+    "bluebird"        : "^3.4.0",
     "coinpit-client": "https://github.com/coinpit/coinpit-client#multi-instrument",
-    "lodash": "^4.17.2",
-    "mangler": "^1.0.1",
-    "pusher-client": "^1.1.0",
-    "rest.js": "0.0.8",
-    "sequencer-js": "0.0.2",
+    "lodash"          : "^4.17.2",
+    "mangler"         : "^1.0.1",
+    "pusher-client"   : "^1.1.0",
+    "rest.js"         : "0.0.8",
+    "sequencer-js"    : "0.0.2",
     "socket.io-client": "^1.4.6"
   },
   "devDependencies": {
-    "expect.js": "^0.3.1",
-    "fixtures.js": "^2.1.0",
-    "mocha": "^3.1.0",
+    "expect.js"       : "^0.3.1",
+    "fixtures.js"     : "^2.1.0",
+    "mocha"           : "^3.1.0",
     "mocha-generators": "^1.2.0"
   }
 }

@@ -13,6 +13,7 @@ module.exports = function (walletFileName) {
   var strat        = (process.env.STRAT || 'collar')
   var quantity     = (process.env.QTY || 5) - 0
   var cross        = process.env.CROSS === "true"
+  var symbol       = process.env.SYMBOL
 
   return {
     baseurl : baseurl,
@@ -24,6 +25,7 @@ module.exports = function (walletFileName) {
     step    : step,
     strat   : strat,
     quantity: quantity,
-    cross   : cross
+    cross   : cross,
+    symbol  : symbol
   }
 }

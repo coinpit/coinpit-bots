@@ -28,15 +28,15 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
   function collar(price) {
-    var buys            = {}, sells = {}
-    var openOrders      = account.getOpenOrders()
-    Object.keys(openOrders).forEach(symbol => Object.keys(openOrders[symbol]).forEach(uuid=>{
-      if(openOrders[symbol][uuid].orderType !== 'STP') delete openOrders[symbol][uuid]
+    var buys       = {}, sells = {}
+    var openOrders = account.getOpenOrders()
+    Object.keys(openOrders).forEach(symbol => Object.keys(openOrders[symbol]).forEach(uuid => {
+      if (openOrders[symbol][uuid].orderType !== 'STP') delete openOrders[symbol][uuid]
     }))
     var availableMargin = account.calculateAvailableMarginIfCrossShifted(openOrders)
     if (availableMargin <= 0) return { buys: buys, sells: sells }
     var inst               = instrument(SYMBOL)
-    var satoshiPerQuantity = (STP + inst.stopcushion) * inst.ticksperpoint * inst.tickvalue
+    var satoshiPerQuantity = getSatoshiPerQuantity[inst.type]()
     var max                = Math.floor(availableMargin / (satoshiPerQuantity * QTY * 2))
     var depth              = Math.min(DEPTH, max * STEP)
     var buySpread          = SPREAD, sellSpread = SPREAD
@@ -53,6 +53,19 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     for (var i = mangler.fixed(price + sellSpread); i < mangler.fixed(price + sellSpread + depth); i = mangler.fixed(i + STEP))
       sells[i] = newOrder('sell', i, QTY)
     return { buys: buys, sells: sells }
+  }
+
+  var getSatoshiPerQuantity = {
+    inverse: function () {
+      var inst  = instrument(SYMBOL)
+      var entry = currentBand.price
+      var exit  = entry - (STP + inst.stopcushion)
+      return Math.ceil(inst.contractusdvalue * 1e8 * (1 / exit - 1 / entry))
+    },
+    quanto : function () {
+      var inst = instrument(SYMBOL)
+      return (STP + inst.stopcushion) * inst.ticksperpoint * inst.tickvalue
+    }
   }
 
   /** random strategy assumes best results on random order spacing **/
@@ -229,10 +242,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function getCurrentBook(orders) {
     var ordersByType = { buys: {}, sells: {}, targets: [], stops: [] }
     orders.forEach(order => {
-      if (order.orderType === 'LMT' && order.side === 'buy')  ordersByType.buys[order.price] = order
+      if (order.orderType === 'LMT' && order.side === 'buy') ordersByType.buys[order.price] = order
       if (order.orderType === 'LMT' && order.side === 'sell') ordersByType.sells[order.price] = order
-      if (order.orderType === 'TGT')  ordersByType.targets.push(order)
-      if (order.orderType === 'STP')  ordersByType.stops.push(order)
+      if (order.orderType === 'TGT') ordersByType.targets.push(order)
+      if (order.orderType === 'STP') ordersByType.stops.push(order)
     })
     return ordersByType
   }
