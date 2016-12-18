@@ -85,16 +85,15 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   }
 
-  function* restDelete() {
+  function* restRemove() {
 
   }
 
 //*********** fuzzy ***********************************************************
 
-  var actions = [create, update, remove, merge, split, restCreate, restUpdate, restDelete]
 
   function randomAction() {
-    return getRandom([create, update])
+    return getRandom([create, restCreate, remove, restRemove])
   }
 
   function randomPrice(symbol, side) {
@@ -143,7 +142,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   function sortedOrdersPerSymbol(orders) {
     orders              = orders || account.getOpenOrders()
-    var ordersPerSymbol = account.config.instruments.map(symbol => {
+    var ordersPerSymbol = Object.keys(account.instruments).map(symbol => {
       var count = { symbol: symbol, size: 0 }
       Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
       return count
@@ -170,7 +169,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function instrument(symbol) {
-    return account.config.instrument[symbol]
+    return account.instruments[symbol]
   }
 
   yield* init()

@@ -6,20 +6,20 @@ var _         = require('lodash')
 var util      = require('util')
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
-  var baseurl     = botParams.baseurl
-  var wallet      = botParams.wallet
-  var DEPTH       = botParams.depth
-  var SPREAD      = botParams.spread
-  var STEP        = botParams.step
-  var STRAT       = botParams.strat
-  var STP         = botParams.stop
-  var TGT         = botParams.target
-  var CROSS       = botParams.cross
-  var QTY         = botParams.quantity
-  var SYMBOL      = botParams.symbol
+  var baseurl = botParams.baseurl
+  var wallet  = botParams.wallet
+  var DEPTH   = botParams.depth
+  var SPREAD  = botParams.spread
+  var STEP    = botParams.step
+  var STRAT   = botParams.strat
+  var STP     = botParams.stop
+  var TGT     = botParams.target
+  var CROSS   = botParams.cross
+  var QTY     = botParams.quantity
+  var SYMBOL  = botParams.symbol
+  affirm(SYMBOL, "Define environment valriable SYMBOL")
   var cc          = require("coinpit-client")(baseurl)
   var account     = yield cc.getAccount(wallet.privateKey)
-  SYMBOL          = SYMBOL || account.config.default.instrument
   account.logging = true
   var currentBand
   var listener    = {}
@@ -303,8 +303,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function instrument(symbol) {
-
-    return account.config.instrument[symbol]
+    return account.instruments[symbol]
   }
 
   yield* init()
