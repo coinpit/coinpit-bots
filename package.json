@@ -25,7 +25,7 @@
     "affirm.js"       : "^1.0.0",
     "bitcoinutil"     : "^1.1.4",
     "bluebird"        : "^3.4.0",
-    "coinpit-client": "https://github.com/coinpit/coinpit-client#multi-instrument",
+    "coinpit-client"  : "https://github.com/coinpit/coinpit-client#multi-instrument",
     "lodash"          : "^4.17.2",
     "mangler"         : "^1.0.1",
     "pusher-client"   : "^1.1.0",

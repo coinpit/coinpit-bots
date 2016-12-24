@@ -193,7 +193,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       var creates = getCreates(currentBook, newBook)
       var patch   = generatePatch(cancels, creates)
       updateTargets(patch.updates, currentBook.targets, price)
-      yield account.patchOrders(patch)
+      yield account.patchOrders(SYMBOL, patch)
     } catch (e) {
       util.log(e);
       util.log(e.stack)
@@ -214,7 +214,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
           merges.push(target.uuid)
           merges.push(target.oco)
         })
-        yield account.patchOrders({ merge: merges })
+        yield account.patchOrders(SYMBOL,{ merge: merges })
       }
     } catch (e) {
       util.log(e)
@@ -293,8 +293,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
     console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY }, null, 2))
-    require('./coinpitFeed')(listener, account.socket)
-    var info  = yield account.loginless.rest.get('/api/info')
+    require('./coinpitFeed')(listener, account.loginless.socket)
+    var info  = yield account.loginless.rest.get('/api/v1/info')
     // console.log('current price', info)
     var price = info[SYMBOL].indexPrice
 
