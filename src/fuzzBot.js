@@ -19,7 +19,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function* init() {
-    require('./coinpitFeed')(listener, account.socket)
+    require('./coinpitFeed')(listener, account.loginless.socket)
     bands = account.getIndexBands()
     setInterval(bluebird.coroutine(function*() {
       if (_.isEmpty(bands)) return
@@ -50,7 +50,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     openOrders[symbol][order.clientid] = order
     var availableMargin                = account.calculateAvailableMarginIfCrossShifted(openOrders)
     if (availableMargin >= 0) {
-      yield account.patchOrders({ creates: [order] })
+      yield account.patchOrders(symbol,{ creates: [order] })
     } else {
       yield* remove()
     }
@@ -66,7 +66,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     var orders    = allOrders[symbol]
     var order     = getRandom(_.values(orders))
     if (order)
-      yield account.patchOrders({ cancels: [order] })
+      yield account.patchOrders(symbol, { cancels: [order] })
   }
 
   function* merge() {
