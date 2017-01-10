@@ -1,31 +1,37 @@
-var assert = require('affirm.js')
+var affirm           = require('affirm.js')
+var PrivateKeyReader = require("./privateKeyReader")
 
-module.exports = function (walletFileName) {
-  var wallet = require("./privateKeyReader")(walletFileName)
-  assert(wallet, 'PrivateKey not found. Check key file.')
-  var baseurl      = process.env.BASE_URL
-  baseurl          = baseurl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
-  var depth        = (process.env.DEPTH || 0.5) - 0
-  var stopPoints   = (process.env.STP || 10) - 0
-  var targetPoints = (process.env.TGT || 1) - 0
-  var spread       = (process.env.SPREAD || 0.1) - 0
-  var step         = (process.env.STEP || 0.1) - 0
-  var strat        = (process.env.STRAT || 'collar')
-  var quantity     = (process.env.QTY || 5) - 0
-  var cross        = process.env.CROSS === "true"
-  var symbol       = process.env.SYMBOL
+module.exports = (function () {
+  var botParams = {}
 
-  return {
-    baseurl : baseurl,
-    depth   : depth,
-    wallet  : wallet,
-    stop    : stopPoints,
-    target  : targetPoints,
-    spread  : spread,
-    step    : step,
-    strat   : strat,
-    quantity: quantity,
-    cross   : cross,
-    symbol  : symbol
+  var DEFAULT_DEPTH  = 0.5
+  var DEFAULT_STP    = 10
+  var DEFAULT_TGT    = 1
+  var DEFAULT_SPREAD = 0.1
+  var DEFAULT_STEP   = 0.1
+  var DEFAULT_QTY    = 5
+  var DEFAULT_STRAT  = 'collar'
+
+  botParams.read = function(walletFileName) {
+    var params = {}
+    params.wallet = PrivateKeyReader(walletFileName)
+    affirm(params.wallet, 'PrivateKey not found. Check key file.')
+    affirm(process.env.TEMPLATE, "Define environment variable TEMPLATE for instrument series")
+
+    params.baseurl  = process.env.BASE_URL
+    params.baseurl  = params.baseurl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
+    params.depth    = (process.env.DEPTH  || DEFAULT_DEPTH) - 0
+    params.stop     = (process.env.STP    || DEFAULT_STP) - 0
+    params.target   = (process.env.TGT    || DEFAULT_TGT) - 0
+    params.spread   = (process.env.SPREAD || DEFAULT_SPREAD) - 0
+    params.step     = (process.env.STEP   || DEFAULT_STEP) - 0
+    params.quantity = (process.env.QTY    || DEFAULT_QTY) - 0
+    params.strat    = process.env.STRAT   || DEFAULT_STRAT
+    params.cross    = process.env.CROSS === "true"
+    params.template = process.env.TEMPLATE
+
+    return params
   }
-}
+
+  return botParams
+})()
