@@ -13,6 +13,7 @@
   "testDateToday"     : "2017-01-08T15:00:00Z",
   "testDateNextWeek"  : "2017-01-15T15:00:00Z",
   "params"            : {
+    "wallet"     : "",
     "baseurl"     : "/",
     "depth"       : "2",
     "stopPoints"  : "2",

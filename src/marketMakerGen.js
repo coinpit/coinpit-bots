@@ -9,7 +9,7 @@ var marketMakerBot = require('./marketMakerBot')
 module.exports = (function* marketMakerGen(params) {
   var gen = {}
 
-  var account           = yield coinpit.getAccount(params.privateKey, params.baseurl)
+  var account           = yield coinpit.getAccount(params.wallet.privateKey, params.baseurl)
   var seriesInstruments = []
   var currentBots       = {}
 
