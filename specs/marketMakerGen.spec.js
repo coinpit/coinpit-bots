@@ -3,8 +3,8 @@ var bluebird       = require('bluebird')
 var mangler        = require('mangler')
 var sinon          = require('sinon')
 var coinpitClient  = require('coinpit-client')
-var fixtures       = require('fixtures.js')(__filename)
-var marketmakerBot = require('../src/marketmakerBot')
+var fixtures       = require('./marketMakerGen.spec.json')
+var marketMakerBot = require('../src/marketMakerBot')
 var marketMakerGen = require('../src/marketMakerGen')
 require('mocha-generators').install()
 
@@ -23,6 +23,7 @@ describe('marketMakerGen', function() {
                   if(Date.now() < Date.parse(fixtures.bot[x].expiry)) {
                     if(Object.keys(instruments).length == 2) return
                     instruments[x] = fixtures.instruments[x]
+                    instruments[x].expiry = Date.parse(fixtures.bot[x].expiry)
                   }
                 })
                 return instruments
@@ -32,7 +33,7 @@ describe('marketMakerGen', function() {
       return bluebird.resolve(account)
     })
 
-    sinon.stub(marketmakerBot, "create", function*(symbol, botParams, account, botPercent) {
+    sinon.stub(marketMakerBot, "create", function*(symbol, botParams, account, botPercent) {
       var bot = fixtures.bot[symbol]
       bot.symbol = symbol
       bot.isExpired = function() { return Date.now() > Date.parse(bot.expiry) }
@@ -44,7 +45,7 @@ describe('marketMakerGen', function() {
 
   afterEach(function() {
     coinpitClient.getAccount.restore()
-    marketmakerBot.create.restore()
+    marketMakerBot.create.restore()
   })
 
   it('should create market maker bots on near expiry and far expiry contracts', function*() {

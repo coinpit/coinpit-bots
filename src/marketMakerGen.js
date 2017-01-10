@@ -4,12 +4,12 @@ var affirm         = require('affirm.js')
 var _              = require('lodash')
 var util           = require('util')
 var coinpit        = require('coinpit-client')
-var marketmakerBot = require('./marketmakerBot')
+var marketMakerBot = require('./marketMakerBot')
 
 module.exports = (function* marketMakerGen(params) {
   var gen = {}
 
-  var account           = yield coinpit.getAccount(params.wallet.privateKey, params.baseurl)
+  var account           = yield coinpit.getAccount(params.privateKey, params.baseurl)
   var seriesInstruments = []
   var currentBots       = {}
 
@@ -39,7 +39,7 @@ module.exports = (function* marketMakerGen(params) {
     if(currentBots[symbol]) {
       return currentBots[symbol].setMarginPercent(botPercent)
     }
-    return currentBots[symbol] = (yield* marketmakerBot.create(symbol, params, account, botPercent))
+    return currentBots[symbol] = (yield* marketMakerBot.create(symbol, params, account, botPercent))
   }
 
   gen.purgeExpired = function() {
