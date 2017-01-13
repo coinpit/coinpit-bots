@@ -44,4 +44,18 @@ describe('marketMakerBot', function() {
   // it('should only use allocated margin to create orders', function*() {
   //
   // })
+
+  it('should compute premium based on timeToExpiry', function*() {
+    var bot  = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
+    for(var i = 0; i < fixtures.premium.length; i++) {
+      expect(bot.getPremium(fixtures.premium[i].expiry)).to.be(fixtures.premium[i].premium)
+    }
+  })
+
+  it('should compute premium price based on time to expiry', function*() {
+    var bot  = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
+    for(var i = 0; i < fixtures.premiumPrice.length; i++) {
+      expect(bot.getPremiumPrice(fixtures.premiumPrice[i].price, fixtures.premiumPrice[i].premium)).to.be(fixtures.premiumPrice[i].premiumPrice)
+    }
+  })
 })

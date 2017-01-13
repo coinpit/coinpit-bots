@@ -4,13 +4,14 @@ var PrivateKeyReader = require("./privateKeyReader")
 module.exports = (function () {
   var botParams = {}
 
-  var DEFAULT_DEPTH  = 0.5
-  var DEFAULT_STP    = 10
-  var DEFAULT_TGT    = 1
-  var DEFAULT_SPREAD = 0.1
-  var DEFAULT_STEP   = 0.1
-  var DEFAULT_QTY    = 5
-  var DEFAULT_STRAT  = 'collar'
+  var DEFAULT_DEPTH   = 0.5
+  var DEFAULT_STP     = 10
+  var DEFAULT_TGT     = 1
+  var DEFAULT_SPREAD  = 0.1
+  var DEFAULT_STEP    = 0.1
+  var DEFAULT_QTY     = 5
+  var DEFAULT_PREMIUM = 6
+  var DEFAULT_STRAT   = 'collar'
 
   botParams.read = function(walletFileName) {
     var params = {}
@@ -29,6 +30,7 @@ module.exports = (function () {
     params.strat    = process.env.STRAT   || DEFAULT_STRAT
     params.cross    = process.env.CROSS === "true"
     params.template = process.env.TEMPLATE
+    params.premium  = (process.env.PREMIUM || DEFAULT_PREMIUM) - 0
 
     return params
   }

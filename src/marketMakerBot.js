@@ -17,29 +17,32 @@ function* mmBot(symbol, botParams, account, marginPercent) {
 
   var bot = {}
 
-  var baseurl = botParams.baseurl
-  var wallet  = botParams.wallet
-  var DEPTH   = botParams.depth
-  var SPREAD  = botParams.spread
-  var STEP    = botParams.step
-  var STRAT   = botParams.strat
-  var STP     = botParams.stop
-  var TGT     = botParams.target
-  var CROSS   = botParams.cross
-  var QTY     = botParams.quantity
-  var SYMBOL  = bot.symbol = symbol
+
+  var baseurl     = botParams.baseurl
+  var wallet      = botParams.wallet
+  var PREMIUM     = botParams.premium
+  var DEPTH       = botParams.depth
+  var SPREAD      = botParams.spread
+  var STEP        = botParams.step
+  var STRAT       = botParams.strat
+  var STP         = botParams.stop
+  var TGT         = botParams.target
+  var CROSS       = botParams.cross
+  var QTY         = botParams.quantity
+  var SYMBOL      = bot.symbol = symbol
   account.logging = true
   var currentBand
   var listener    = bot.listener = {}
   // strategy names and function calls
-  var strategies  = { 'collar': collar, 'random': random }
 
   bot.marginPercent = marginPercent
   bot.getMarginPercent = function() { return bot.marginPercent }
   bot.setMarginPercent = function(marginPercent) { bot.marginPercent = marginPercent}
   bot.isExpired = function() { return !isActive() }
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
-  function collar(price) {
+  bot.collar = function(price) {
+    affirm(price && typeof price === 'number', 'Numeric price required for collar')
+
     var buys       = {}, sells = {}
     var openOrders = account.getOpenOrders()
     Object.keys(openOrders).forEach(symbol => Object.keys(openOrders[symbol]).forEach(uuid => {
@@ -62,11 +65,20 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     }
 
     console.log(DEPTH, STEP, max, 'price-spread', mangler.fixed(price - buySpread), 'price - buySpread - depth', mangler.fixed(price - buySpread - depth))
+    var premium = bot.getPremium(inst.expiry - Date.now())
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, QTY)
     for (var i = mangler.fixed(price + sellSpread); i < mangler.fixed(price + sellSpread + depth); i = mangler.fixed(i + STEP))
-      sells[i] = newOrder('sell', i, QTY)
+      sells[i] = newOrder('sell', bot.getPremiumPrice(i, premium), QTY)
     return { buys: buys, sells: sells }
+  }
+
+  bot.getPremiumPrice = function(price, premium) {
+    return mangler.fixed(price * (1 + premium))
+  }
+
+  bot.getPremium = function(timeToExpiry) {
+    return (timeToExpiry * PREMIUM)/(86400000*10000)
   }
 
   var getSatoshiPerQuantity = {
@@ -87,7 +99,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   /** random strategy assumes best results on random order spacing **/
-  function random(price) {
+  bot.random = function(price) {
     var buys = {}, sells = {}
     var bid  = mangler.fixed(price - SPREAD), ask = mangler.fixed(price + SPREAD)
     for (var i = 0; i < DEPTH;) {
@@ -101,7 +113,8 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   function createNewBook(price) {
-    var strategy = strategies[STRAT] || strategies['collar']
+    var strategy = bot.strategies[STRAT]
+    affirm(strategy && typeof strategy === 'function', 'Unknown strategy')
     return strategy(price)
   }
 
@@ -314,6 +327,8 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   })
 
   function* init() {
+    bot.strategies  = { 'collar': bot.collar, 'random': bot.random }
+
     var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)

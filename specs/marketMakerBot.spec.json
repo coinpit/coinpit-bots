@@ -1,17 +1,39 @@
 {
+  "premium": [
+    {
+      "expiry": 0,
+      "premium": 0
+    },
+    {
+      "expiry": 86400000,
+      "premium": 0.0006
+    },
+    {
+      "expiry": 518400000,
+      "premium": 0.0036
+    }
+  ],
+  "premiumPrice": [
+    {
+      "premium": 0.005,
+      "price": 900,
+      "premiumPrice": 904.5
+    }
+  ],
   "testDateToday" : "2017-01-08T17:00:00Z",
   "symbol" : "BTCUSD7F13",
   "price" : { "indexPrice": 900},
   "params" : {
     "baseurl"      : "/",
     "depth"        : "2",
-    "stopPoints"   : "2",
-    "targetPoints" : "2",
+    "stop"   : "2",
+    "target" : "2",
     "spread"       : "0.5",
     "step"         : "0.1",
     "quantity"     : "5",
     "strat"        : "collar",
     "cross"        : "true",
+    "premium"      : 6,
     "ins"          : "BTCUSD"
   },
   "marginPercent": 90,
