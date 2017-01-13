@@ -55,7 +55,8 @@ describe('marketMakerBot', function() {
   it('should compute premium price based on time to expiry', function*() {
     var bot  = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
     for(var i = 0; i < fixtures.premiumPrice.length; i++) {
-      expect(bot.getPremiumPrice(fixtures.premiumPrice[i].price, fixtures.premiumPrice[i].premium)).to.be(fixtures.premiumPrice[i].premiumPrice)
+      var test = fixtures.premiumPrice[i]
+      expect(bot.getPremiumPrice(test.price, test.premium, test.ticksize)).to.be(test.premiumPrice)
     }
   })
 })

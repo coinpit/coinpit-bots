@@ -17,8 +17,16 @@
     {
       "premium": 0.005,
       "price": 900,
-      "premiumPrice": 904.5
+      "premiumPrice": 904.5,
+      "ticksize": 1
+    },
+    {
+      "premium": 0.006,
+      "price": 833,
+      "premiumPrice": 838,
+      "ticksize": 1
     }
+
   ],
   "testDateToday" : "2017-01-08T17:00:00Z",
   "symbol" : "BTCUSD7F13",

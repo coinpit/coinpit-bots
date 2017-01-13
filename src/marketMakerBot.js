@@ -69,12 +69,13 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, QTY)
     for (var i = mangler.fixed(price + sellSpread); i < mangler.fixed(price + sellSpread + depth); i = mangler.fixed(i + STEP))
-      sells[i] = newOrder('sell', bot.getPremiumPrice(i, premium), QTY)
+      sells[i] = newOrder('sell', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
     return { buys: buys, sells: sells }
   }
 
-  bot.getPremiumPrice = function(price, premium) {
-    return mangler.fixed(price * (1 + premium))
+  bot.getPremiumPrice = function(price, premium, ticksize) {
+    var multiplier   = Math.pow(10, ticksize)
+    return mangler.fixed(Math.round(multiplier* price * (1 + premium)) / multiplier)
   }
 
   bot.getPremium = function(timeToExpiry) {
