@@ -335,7 +335,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
     console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY }, null, 2))
     require('./coinpitFeed')(listener, account.loginless.socket)
-    var info  = yield account.loginless.rest.get('/info')
+    var info  = yield account.loginless.rest.get('/all/info')
     // console.log('current price', info)
     var price = info[SYMBOL].indexPrice
 

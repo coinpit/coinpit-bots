@@ -10,6 +10,7 @@ module.exports = (function* marketMakerGen(params) {
   var gen = {}
 
   var account           = yield coinpit.getAccount(params.wallet.privateKey, params.baseurl)
+  account.logging = true
   var seriesInstruments = []
   var currentBots       = {}
 
