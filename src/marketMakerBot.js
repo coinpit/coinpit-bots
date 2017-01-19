@@ -84,6 +84,19 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     return (timeToExpiry * PREMIUM) / (86400000 * 10000)
   }
 
+  bot.removeDuplicateOrders = function*() {
+    var openOrders = account.getOpenOrders()[SYMBOL]
+    if (!openOrders || _.isEmpty(openOrders)) return
+    var ordersToBeRemoved = []
+    var ordersByPrice     = {}
+    _.values(openOrders).forEach(order => {
+      if (order.orderType === 'STP' || order.orderType === 'TGT') return
+      if (ordersByPrice[order.price]) return ordersToBeRemoved.push(order)
+      ordersByPrice[order.price] = order
+    })
+    if (ordersToBeRemoved.length > 0) yield account.patchOrders(SYMBOL, { cancels: ordersToBeRemoved })
+  }
+
   var getSatoshiPerQuantity = {
     inverse: function () {
       var inst = instrument(SYMBOL)
@@ -224,6 +237,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     }
     jobs.movePrice = false
     try {
+      yield* bot.removeDuplicateOrders()
       var orders      = getOrders()
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(price)

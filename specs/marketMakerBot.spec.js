@@ -3,30 +3,48 @@ var bluebird       = require('bluebird')
 var mangler        = require('mangler')
 var sinon          = require('sinon')
 var coinpitClient  = require('coinpit-client')
-var fixtures       = require('fixtures.js')(__filename)
+var fixtures       = require('./fixtures/marketMakerBot.spec.json')
 var marketMakerBot = require('../src/marketMakerBot')
 require('mocha-generators').install()
 
-describe('marketMakerBot', function() {
-  var resultPrice = {}
+describe('marketMakerBot', function () {
+  var resultPrice              = {}
   resultPrice[fixtures.symbol] = fixtures.price
 
   var account =
         {
-          "patchOrders": function() { return bluebird.resolve(true)},
-          "getInstruments": function() { return fixtures.instruments },
-          "loginless" : {
-            "socket" : { "on" : function() { return true } },
-            "rest" : { "get" : function() { return bluebird.resolve(resultPrice) } },
+          "patchOrders"                           : function () {
+            return bluebird.resolve(true)
           },
-          "getOpenOrders": function() { return {} },
-          "calculateAvailableMarginIfCrossShifted": function() { return 900000 },
-          "getPositions": function() { return {} }
+          "getInstruments"                        : function () {
+            return fixtures.instruments
+          },
+          "loginless"                             : {
+            "socket": {
+              "on": function () {
+                return true
+              }
+            },
+            "rest"  : {
+              "get": function () {
+                return bluebird.resolve(resultPrice)
+              }
+            },
+          },
+          "getOpenOrders"                         : function () {
+            return {}
+          },
+          "calculateAvailableMarginIfCrossShifted": function () {
+            return 900000
+          },
+          "getPositions"                          : function () {
+            return {}
+          }
         }
 
   it('should stop creating orders on expiration', function*() {
     var timestamp = Date.parse(fixtures.testDateToday)
-    var clock = sinon.useFakeTimers(timestamp)
+    var clock     = sinon.useFakeTimers(timestamp)
 
     sinon.spy(account, "patchOrders")
     expect(account.patchOrders.called).to.be(false)
@@ -46,17 +64,27 @@ describe('marketMakerBot', function() {
   // })
 
   it('should compute premium based on timeToExpiry', function*() {
-    var bot  = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
-    for(var i = 0; i < fixtures.premium.length; i++) {
+    var bot = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
+    for (var i = 0; i < fixtures.premium.length; i++) {
       expect(bot.getPremium(fixtures.premium[i].expiry)).to.be(fixtures.premium[i].premium)
     }
   })
 
   it('should compute premium price based on time to expiry', function*() {
-    var bot  = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
-    for(var i = 0; i < fixtures.premiumPrice.length; i++) {
+    var bot = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
+    for (var i = 0; i < fixtures.premiumPrice.length; i++) {
       var test = fixtures.premiumPrice[i]
       expect(bot.getPremiumPrice(test.price, test.premium, test.ticksize)).to.be(test.premiumPrice)
     }
+  })
+
+  it('should remove all orders except one if multiple orders are at same price', function*() {
+    var bot = yield* marketMakerBot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent)
+    sinon.stub(account, 'getOpenOrders').returns(fixtures.duplicateRemoval.orders)
+    sinon.spy(account, 'patchOrders')
+    yield* bot.removeDuplicateOrders()
+    var patch = account.patchOrders.getCall(0).args[1]
+    expect(patch).to.be.eql(fixtures.duplicateRemoval.result)
+    account.patchOrders.restore()
   })
 })
