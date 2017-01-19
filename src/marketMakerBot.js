@@ -346,7 +346,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   function* init() {
     bot.strategies = { 'collar': bot.collar, 'random': bot.random }
     if (CROSS) {
-      STP = instrument(SYMBOL).config.crossMarginInitialStop
+      STP = instrument(SYMBOL).crossMarginInitialStop
     }
     var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
