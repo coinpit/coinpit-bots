@@ -57,6 +57,7 @@ describe('marketMakerBot', function () {
     bot.listener.trade()
     expect(account.patchOrders.called).to.be(false)
     clock.restore()
+    account.patchOrders.restore()
   })
 
   // it('should only use allocated margin to create orders', function*() {
@@ -86,5 +87,6 @@ describe('marketMakerBot', function () {
     var patch = account.patchOrders.getCall(0).args[1]
     expect(patch).to.be.eql(fixtures.duplicateRemoval.result)
     account.patchOrders.restore()
+    account.getOpenOrders.restore()
   })
 })
