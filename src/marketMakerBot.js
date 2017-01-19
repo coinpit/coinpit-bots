@@ -1,12 +1,12 @@
-var bluebird  = require('bluebird')
-var mangler   = require('mangler')
-var affirm    = require('affirm.js')
-var _         = require('lodash')
-var util      = require('util')
+var bluebird = require('bluebird')
+var mangler  = require('mangler')
+var affirm   = require('affirm.js')
+var _        = require('lodash')
+var util     = require('util')
 
-module.exports = (function (){
-  var creator = {}
-  creator.create = function*(symbol, botParams, account, marginPercent){
+module.exports = (function () {
+  var creator    = {}
+  creator.create = function*(symbol, botParams, account, marginPercent) {
     return (yield* mmBot(symbol, botParams, account, marginPercent))
   }
   return creator
@@ -17,38 +17,40 @@ function* mmBot(symbol, botParams, account, marginPercent) {
 
   var bot = {}
 
-
-  var baseurl     = botParams.baseurl
-  var wallet      = botParams.wallet
-  var PREMIUM     = botParams.premium
-  var DEPTH       = botParams.depth
-  var SPREAD      = botParams.spread
-  var STEP        = botParams.step
-  var STRAT       = botParams.strat
-  var STP         = botParams.stop
-  var TGT         = botParams.target
-  var CROSS       = botParams.cross
-  var QTY         = botParams.quantity
-  var SYMBOL      = bot.symbol = symbol
+  var baseurl = botParams.baseurl
+  var wallet  = botParams.wallet
+  var PREMIUM = botParams.premium
+  var DEPTH   = botParams.depth
+  var SPREAD  = botParams.spread
+  var STEP    = botParams.step
+  var STRAT   = botParams.strat
+  var CROSS   = botParams.cross
+  var STP     = botParams.stop
+  var TGT     = botParams.target
+  var QTY     = botParams.quantity
+  var SYMBOL  = bot.symbol = symbol
   account.logging = true
   var currentBand
   var listener    = bot.listener = {}
   // strategy names and function calls
 
-  bot.marginPercent = marginPercent
-  bot.getMarginPercent = function() { return bot.marginPercent }
-  bot.setMarginPercent = function(marginPercent) { bot.marginPercent = marginPercent}
-  bot.isExpired = function() { return !isActive() }
+  bot.marginPercent    = marginPercent
+  bot.getMarginPercent = function () {
+    return bot.marginPercent
+  }
+  bot.setMarginPercent = function (marginPercent) {
+    bot.marginPercent = marginPercent
+  }
+  bot.isExpired        = function () {
+    return !isActive()
+  }
+
   /** collar strategy basically puts buys and sells around ref price at fixed spread and spacing **/
-  bot.collar = function(price) {
+  bot.collar = function (price) {
     affirm(price && typeof price === 'number', 'Numeric price required for collar')
 
-    var buys       = {}, sells = {}
-    var openOrders = account.getOpenOrders()
-    Object.keys(openOrders).forEach(symbol => Object.keys(openOrders[symbol]).forEach(uuid => {
-      if (openOrders[symbol][uuid].orderType !== 'STP') delete openOrders[symbol][uuid]
-    }))
-    var availableMargin = Math.floor(account.calculateAvailableMarginIfCrossShifted(openOrders) * bot.marginPercent / 100)
+    var buys            = {}, sells = {}
+    var availableMargin = calculateAvailableMargin()
     console.log('availableMargin', availableMargin)
     if (availableMargin <= 0) return { buys: buys, sells: sells }
     var inst               = instrument(SYMBOL)
@@ -73,23 +75,22 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     return { buys: buys, sells: sells }
   }
 
-  bot.getPremiumPrice = function(price, premium, ticksize) {
-    var multiplier   = Math.pow(10, ticksize)
-    return mangler.fixed(Math.round(multiplier* price * (1 + premium)) / multiplier)
+  bot.getPremiumPrice = function (price, premium, ticksize) {
+    var multiplier = Math.pow(10, ticksize)
+    return mangler.fixed(Math.round(multiplier * price * (1 + premium)) / multiplier)
   }
 
-  bot.getPremium = function(timeToExpiry) {
-    return (timeToExpiry * PREMIUM)/(86400000*10000)
+  bot.getPremium = function (timeToExpiry) {
+    return (timeToExpiry * PREMIUM) / (86400000 * 10000)
   }
 
   var getSatoshiPerQuantity = {
     inverse: function () {
-      var inst  = instrument(SYMBOL)
+      var inst = instrument(SYMBOL)
       affirm(currentBand && currentBand.price, 'Band price unavailable')
       affirm(inst && inst.stopcushion, 'Instrument cushion unavailable')
       affirm(inst && inst.contractusdvalue, 'Instrument contractusdvalue unavailable')
-      console.log('STP', STP)
-      var entry = currentBand.price
+      var entry = currentBand.price - DEPTH
       var exit  = entry - (STP + inst.stopcushion)
       return Math.ceil(inst.contractusdvalue * 1e8 * (1 / exit - 1 / entry))
     },
@@ -100,7 +101,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   /** random strategy assumes best results on random order spacing **/
-  bot.random = function(price) {
+  bot.random = function (price) {
     var buys = {}, sells = {}
     var bid  = mangler.fixed(price - SPREAD), ask = mangler.fixed(price + SPREAD)
     for (var i = 0; i < DEPTH;) {
@@ -208,6 +209,12 @@ function* mmBot(symbol, botParams, account, marginPercent) {
 
   var jobs = { movePrice: true, merge: true }
   // var busy      = false
+  function getOrders() {
+    var allOrders = account.getOpenOrders()
+    affirm(allOrders, 'Invalid return for open orders')
+    return _.toArray(allOrders[SYMBOL] || {})
+  }
+
   function* movePrice() {
     if (!jobs.movePrice) return
     var price = currentBand.price
@@ -217,7 +224,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     }
     jobs.movePrice = false
     try {
-      var orders      = _.toArray(account.getOpenOrders()[SYMBOL] || {})
+      var orders      = getOrders()
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(price)
 
@@ -236,7 +243,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     if (!jobs.merge) return
     jobs.merge = false
     try {
-      var orders  = _.toArray(account.getOpenOrders()[SYMBOL])
+      var orders  = getOrders()
       var targets = getCurrentBook(orders).targets
       if (targets.length > 50) {
         targets    = targets.sort(quantityLowToHigh)
@@ -246,7 +253,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
           merges.push(target.uuid)
           merges.push(target.oco)
         })
-        yield account.patchOrders(SYMBOL,{ merge: merges })
+        yield account.patchOrders(SYMBOL, { merge: merges })
       }
     } catch (e) {
       util.log(e)
@@ -317,23 +324,34 @@ function* mmBot(symbol, botParams, account, marginPercent) {
 
   var moveAndMerge = bluebird.coroutine(function*() {
     try {
-      if(isActive()) yield* movePrice()
-      if(isActive()) yield* mergePositions()
+      if (isActive()) yield* movePrice()
+      if (isActive()) yield* mergePositions()
     } catch (e) {
       util.log(e.stack)
     } finally {
-      if(isActive()) setTimeout(moveAndMerge, 100)
+      if (isActive()) setTimeout(moveAndMerge, 100)
       else console.log('Shutting down bot for', SYMBOL)
     }
   })
 
-  function* init() {
-    bot.strategies  = { 'collar': bot.collar, 'random': bot.random }
+  function calculateAvailableMargin() {
+    var openOrders = account.getOpenOrders()
+    affirm(openOrders, 'open orders missing')
+    Object.keys(openOrders).forEach(symbol => Object.keys(openOrders[symbol]).forEach(uuid => {
+      if (openOrders[symbol][uuid].orderType !== 'STP') delete openOrders[symbol][uuid]
+    }))
+    return Math.floor(account.calculateAvailableMarginIfCrossShifted(openOrders) * bot.marginPercent / 100)
+  }
 
+  function* init() {
+    bot.strategies = { 'collar': bot.collar, 'random': bot.random }
+    if (CROSS) {
+      STP = instrument(SYMBOL).config.crossMarginInitialStop
+    }
     var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY }, null, 2))
+    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY, CROSS: CROSS }, null, 2))
     require('./coinpitFeed')(listener, account.loginless.socket)
     var info  = yield account.loginless.rest.get('/all/info')
     // console.log('current price', info)
