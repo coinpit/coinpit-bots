@@ -18,7 +18,7 @@ module.exports = (function* marketMakerGen(params) {
     yield* gen.createBots()
     bluebird.coroutine(function*(){
       while(true) {
-        yield bluebird.delay(15 * 60 * 1000)
+        yield bluebird.delay(1 * 60 * 1000)
         yield* gen.createBots()
       }
     })()

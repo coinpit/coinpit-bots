@@ -66,7 +66,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
       sellSpread         = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
     }
 
-    console.log(DEPTH, STEP, max, 'price-spread', mangler.fixed(price - buySpread), 'price - buySpread - depth', mangler.fixed(price - buySpread - depth))
+    console.log(SYMBOL, DEPTH, STEP, max, 'price-spread', mangler.fixed(price - buySpread), 'price - buySpread - depth', mangler.fixed(price - buySpread - depth))
     var premium = bot.getPremium(inst.expiry - Date.now())
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, QTY)
