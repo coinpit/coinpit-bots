@@ -1,6 +1,6 @@
 {
   "name": "coinpit-bots",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "bots for coinpit app",
   "scripts": {
     "test": "mocha specs/*"
