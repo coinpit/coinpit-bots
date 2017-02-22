@@ -14,7 +14,7 @@ module.exports = function (listener, socket) {
       process.nextTick(listener.priceband.bind(listener, band))
   })
 
-  socket.on('user_message', function (msg) {
+  socket.on('account', function (msg) {
     if (listener.userMessage)
       process.nextTick(listener.userMessage.bind(listener))
   })
