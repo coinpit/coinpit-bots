@@ -7,17 +7,17 @@ var coinpit        = require('coinpit-client')
 var marketMakerBot = require('./marketMakerBot')
 
 module.exports = (function* marketMakerGen(params) {
-  var gen = {}
-  gen.delayTime =1 * 60 * 1000
+  var gen               = {}
+  gen.delayTime         = 1 * 60 * 1000
   var account           = yield coinpit.getAccount(params.wallet.privateKey, params.baseurl)
-  account.logging = true
+  account.logging       = true
   var seriesInstruments = []
   var currentBots       = {}
 
   gen.run = function*() {
     yield* gen.createBots()
-    bluebird.coroutine(function*(){
-      while(true) {
+    bluebird.coroutine(function*() {
+      while (true) {
         yield bluebird.delay(gen.delayTime)
         yield* gen.createBots()
       }
@@ -25,14 +25,15 @@ module.exports = (function* marketMakerGen(params) {
   }
 
   gen.createBots = function*() {
-    seriesInstruments = sortByExpiry(account.getInstruments(), params.template)
-    console.log("INSTRUMENTS FROM ACCOUNT: ", account.getInstruments())
-    console.log("SERIES INSTRUMENTS: ", seriesInstruments)
+    var instruments   = account.getInstruments()
+    seriesInstruments = sortByExpiry(instruments, params.template)
+    console.log("INSTRUMENTS FROM ACCOUNT: ", Object.keys(instruments).map(symbol => symbol + ":" + instruments[symbol].expiry))
+    console.log("SERIES INSTRUMENTS: ", seriesInstruments.map(instrument => instrument.symbol + ":" + instrument.expiry))
     console.log("CURRENT BOTS", Object.keys(currentBots))
     gen.purgeExpired()
     var availableMarginPercent = 100
-    for(var i = 0; i < seriesInstruments.length; i++) {
-      var percent = (i == seriesInstruments.length - 1 ? 1 : 0.9)
+    for (var i = 0; i < seriesInstruments.length; i++) {
+      var percent    = (i == seriesInstruments.length - 1 ? 1 : 0.9)
       var botPercent = Math.floor(availableMarginPercent * percent)
       availableMarginPercent -= botPercent
       yield* gen.createBot(seriesInstruments[i].symbol, params, account, botPercent)
@@ -41,34 +42,36 @@ module.exports = (function* marketMakerGen(params) {
   }
 
   gen.createBot = function*(symbol, params, account, botPercent) {
-    if(currentBots[symbol]) {
+    if (currentBots[symbol]) {
       return currentBots[symbol].setMarginPercent(botPercent)
     }
     return currentBots[symbol] = (yield* marketMakerBot.create(symbol, params, account, botPercent))
   }
 
-  gen.purgeExpired = function() {
+  gen.purgeExpired = function () {
     Object.keys(currentBots).forEach(bot => {
-      if (currentBots[bot].isExpired()){
+      if (currentBots[bot].isExpired()) {
         console.log('REMOVING BOT', bot)
         delete currentBots[bot]
       }
     })
   }
 
-  gen.nearExpiryBot = function() {
+  gen.nearExpiryBot = function () {
     return currentBots[seriesInstruments[0].symbol]
   }
 
-  gen.farExpiryBot = function() {
+  gen.farExpiryBot = function () {
     return currentBots[seriesInstruments[1].symbol]
   }
 
   function sortByExpiry(instruments, template) {
     return _.values(instruments)
-            .filter(x => x.template === template)
-            .filter(x => Date.now() < x.expiry)
-            .sort(function(a, b) { return a.expiry - b.expiry })
+      .filter(x => x.template === template)
+      .filter(x => Date.now() < x.expiry)
+      .sort(function (a, b) {
+        return a.expiry - b.expiry
+      })
   }
 
   return gen
