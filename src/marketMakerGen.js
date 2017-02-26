@@ -15,6 +15,7 @@ module.exports = (function* marketMakerGen(params) {
   var currentBots       = {}
 
   gen.run = function*() {
+    util.log('BOT GENERATOR STARTING', currentBots)
     yield* gen.createBots()
     bluebird.coroutine(function*() {
       while (true) {
@@ -27,9 +28,9 @@ module.exports = (function* marketMakerGen(params) {
   gen.createBots = function*() {
     var instruments   = account.getInstruments()
     seriesInstruments = sortByExpiry(instruments, params.template)
-    console.log("INSTRUMENTS FROM ACCOUNT: ", Object.keys(instruments).map(symbol => symbol + ":" + instruments[symbol].expiry))
-    console.log("SERIES INSTRUMENTS: ", seriesInstruments.map(instrument => instrument.symbol + ":" + instrument.expiry))
-    console.log("CURRENT BOTS", Object.keys(currentBots))
+    util.log("INSTRUMENTS FROM ACCOUNT: ", Object.keys(instruments).map(symbol => symbol + ":" + instruments[symbol].expiry))
+    util.log("SERIES INSTRUMENTS: ", seriesInstruments.map(instrument => instrument.symbol + ":" + instrument.expiry))
+    util.log("CURRENT BOTS", Object.keys(currentBots))
     gen.purgeExpired()
     var availableMarginPercent = 100
     for (var i = 0; i < seriesInstruments.length; i++) {
@@ -38,7 +39,7 @@ module.exports = (function* marketMakerGen(params) {
       availableMarginPercent -= botPercent
       yield* gen.createBot(seriesInstruments[i].symbol, params, account, botPercent)
     }
-    console.log("CURRENT BOTS AFTER CREATION", Object.keys(currentBots))
+    util.log("CURRENT BOTS AFTER CREATION", Object.keys(currentBots))
   }
 
   gen.createBot = function*(symbol, params, account, botPercent) {
@@ -51,7 +52,7 @@ module.exports = (function* marketMakerGen(params) {
   gen.purgeExpired = function () {
     Object.keys(currentBots).forEach(bot => {
       if (currentBots[bot].isExpired()) {
-        console.log('REMOVING BOT', bot)
+        util.log('REMOVING BOT', bot)
         delete currentBots[bot]
       }
     })
