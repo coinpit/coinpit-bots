@@ -1,48 +1,54 @@
-module.exports = function (listener, socket) {
+var affirm = require('affirm.js')
+
+module.exports = function (socket) {
   // var socket = require("socket.io-client")(coinpitUrl, { rejectUnauthorized: true })
-  var counters = resetCounters()
-  socket.on('trade', function (trade) {
-    counters.trade++
-    if (listener.trade)
-      process.nextTick(listener.trade.bind(listener, trade.price))
-  })
+  var feed      = {}
+  var listeners = []
 
-  socket.on('orderbook', function (orderbook) {
-    counters.orderbook++
-    if (listener.orderbook)
-      process.nextTick(listener.orderbook.bind(listener, band))
-  })
+  feed.setListeners = function (handlers) {
+    affirm(Array.isArray(handlers), "handlers must be an Array")
+    listeners = handlers
+  }
 
-  socket.on('priceband', function (band) {
-    counters.priceband++
-    if (listener.priceband)
-      process.nextTick(listener.priceband.bind(listener, band))
-  })
+  var counters        = {}
+  var eventHandlerMap = {
+    trade        : "trade",
+    orderbook    : "orderbook",
+    priceband    : "priceband",
+    account      : "userMessage",
+    order_patch  : "orderPatch",
+    difforderbook: "difforderbook"
+  }
 
-  socket.on('account', function (msg) {
-    counters.userMessage++
-    if (listener.userMessage)
-      process.nextTick(listener.userMessage.bind(listener))
-  })
+  function addListeners() {
+    Object.keys(eventHandlerMap).forEach(topic => {
+      function eventListener(response) {
+        counters[topic]++
+        listeners.forEach(listener => {
+          var handler = listener[eventHandlerMap[topic]]
+          if (handler)
+            process.nextTick(handler.bind(handler, response))
+        })
+      }
 
-  socket.on('order_patch', function (response) {
-    counters.order_patch++
-    if (listener.orderPatch)
-      process.nextTick(listener.orderPatch.bind(listener, response))
-  })
+      socket.on(topic, eventListener)
+    })
+  }
 
-  socket.on('difforderbook', function (difforderbook) {
-    counters.difforderbook++
-    if (listener.difforderbook)
-      process.nextTick(listener.difforderbook.bind(listener, response))
-  })
-
-  setInterval(function(){
+  setInterval(function () {
     console.log('messages recieved on socket', JSON.stringify(counters))
-    counters = resetCounters()
+    resetCounters()
   }, 60000)
 
   function resetCounters() {
-    return {trade:0, orderbook:0, priceband:0, account:0, order_patch:0, difforderbook:0}
+    counters = { trade: 0, orderbook: 0, priceband: 0, account: 0, order_patch: 0, difforderbook: 0 }
   }
+
+  function init() {
+    resetCounters()
+    addListeners()
+  }
+
+  init()
+  return feed
 }

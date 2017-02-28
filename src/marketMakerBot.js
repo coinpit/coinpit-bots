@@ -33,7 +33,6 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   var currentBand
   var listener    = bot.listener = {}
   // strategy names and function calls
-  var counters = resetCounters()
   bot.marginPercent    = marginPercent
   bot.getMarginPercent = function () {
     return bot.marginPercent
@@ -185,7 +184,6 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   listener.orderPatch = bluebird.coroutine(function*(response) {
-    counters.order_patch++
     try {
       for (var i = 0; i < response.result.length; i++) {
         var eachResponse = response.result[i];
@@ -203,17 +201,14 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   })
 
   listener.userMessage = bluebird.coroutine(function*() {
-    counters.userMessage++
     jobs.merge = true
   })
 
   listener.trade = bluebird.coroutine(function*() {
-    counters.trade++
     jobs.movePrice = true
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
-    counters.priceband++
     try {
       if (!band) return console.log('bad band ', band)
       currentBand    = band[SYMBOL]
@@ -370,27 +365,17 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
     console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY, CROSS: CROSS }, null, 2))
-    require('./coinpitFeed')(listener, account.loginless.socket)
-    var info  = yield account.loginless.rest.get('/all/info')
+    var info    = yield account.loginless.rest.get('/all/info')
     // console.log('current price', info)
-    var price = info[SYMBOL].indexPrice
+    var price   = info[SYMBOL].indexPrice
 
     currentBand = { price: price }
     yield moveAndMerge()
-    setInterval(function(){
-      console.log(SYMBOL, 'messages recieved on socket', JSON.stringify(counters))
-      counters = resetCounters()
-    }, 60000)
   }
 
   function instrument(symbol) {
     return account.getInstruments()[symbol]
   }
-
-  function resetCounters() {
-    return {trade:0, orderbook:0, priceband:0, account:0, order_patch:0, difforderbook:0}
-  }
-
 
   yield* init()
   return bot

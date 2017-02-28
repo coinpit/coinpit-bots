@@ -70,6 +70,7 @@ describe('marketMakerGen', function () {
     var mmGen       = yield* marketMakerGen(fixtures.params)
     var unpromoted, promoted
     mmGen.delayTime = 60 * 60 * 1000
+    sinon.stub(mmGen, 'setListeners', function(){})
     yield* mmGen.run()
     expect(mmGen.nearExpiryBot().symbol).to.be(NEAR_SYMBOL)
     expect((unpromoted = mmGen.farExpiryBot()).symbol).to.be(FAR_SYMBOL)
@@ -78,12 +79,14 @@ describe('marketMakerGen', function () {
     expect(mmGen.farExpiryBot().symbol).to.be(NEXT_FAR_SYMBOL)
     expect(promoted).to.equal(unpromoted)
     clock.restore()
+    mmGen.setListeners.restore()
   })
 
   it('should allocate 90%/10% availableMargin to near/far expiry bots', function*() {
     var timestamp    = Date.parse(fixtures.testDateToday)
     var clock        = sinon.useFakeTimers(timestamp)
     var mmGen        = yield* marketMakerGen(fixtures.params)
+    sinon.stub(mmGen, 'setListeners', function(){})
     var MAJOR_MARGIN = 90
     var MINOR_MARGIN = 10
     mmGen.delayTime  = 60 * 60 * 1000
@@ -94,6 +97,7 @@ describe('marketMakerGen', function () {
     expect(mmGen.nearExpiryBot().getMarginPercent()).to.be(MAJOR_MARGIN)
     expect(mmGen.farExpiryBot().getMarginPercent()).to.be(MINOR_MARGIN)
     clock.restore()
+    mmGen.setListeners.restore()
   })
 
 })

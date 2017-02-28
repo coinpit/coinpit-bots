@@ -5,6 +5,7 @@ var _              = require('lodash')
 var util           = require('util')
 var coinpit        = require('coinpit-client')
 var marketMakerBot = require('./marketMakerBot')
+var CoinpitFeed    = require("./coinpitFeed")
 
 module.exports = (function* marketMakerGen(params) {
   var gen               = {}
@@ -13,14 +14,17 @@ module.exports = (function* marketMakerGen(params) {
   account.logging       = true
   var seriesInstruments = []
   var currentBots       = {}
+  var coinpitFeed
 
   gen.run = function*() {
     util.log('BOT GENERATOR STARTING', currentBots)
     yield* gen.createBots()
+    gen.setListeners()
     bluebird.coroutine(function*() {
       while (true) {
         yield bluebird.delay(gen.delayTime)
         yield* gen.createBots()
+        gen.setListeners()
       }
     })()
   }
@@ -64,6 +68,12 @@ module.exports = (function* marketMakerGen(params) {
 
   gen.farExpiryBot = function () {
     return currentBots[seriesInstruments[1].symbol]
+  }
+
+  gen.setListeners = function () {
+    coinpitFeed = coinpitFeed || CoinpitFeed(account.loginless.socket)
+    var handlers = _.values(currentBots).map(bot => bot.listener)
+    coinpitFeed.setListeners(handlers)
   }
 
   function sortByExpiry(instruments, template) {
