@@ -29,6 +29,7 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   var TGT     = botParams.target
   var QTY     = botParams.quantity
   var SYMBOL  = bot.symbol = symbol
+  var counters    = { trade: 0, band: 0 }
   account.logging = true
   var currentBand
   var listener    = bot.listener = {}
@@ -205,10 +206,12 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   })
 
   listener.trade = bluebird.coroutine(function*() {
+    counters.trade++
     jobs.movePrice = true
   })
 
   listener.priceband = bluebird.coroutine(function*(band) {
+    counters.band++
     try {
       if (!band) return console.log('bad band ', band)
       currentBand    = band[SYMBOL]
@@ -332,18 +335,25 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   function isActive() {
     var currentInstrument = instrument(SYMBOL)
     return (currentInstrument && Date.now() <= currentInstrument.expiry)
-
   }
 
+  var last         = 0
   var moveAndMerge = bluebird.coroutine(function*() {
+    var active;
     try {
-      if (isActive()) yield* movePrice()
-      if (isActive()) yield* mergePositions()
+      active = isActive();
+      if (!active) return console.log('Shutting down bot for', SYMBOL)
+      yield* movePrice()
+      yield* mergePositions()
     } catch (e) {
       util.log(e.stack)
     } finally {
-      if (isActive()) setTimeout(moveAndMerge, 100)
-      else console.log('Shutting down bot for', SYMBOL)
+      if (active) setTimeout(moveAndMerge, 100)
+      if (Date.now() - last > 60000) {
+        util.log("STILL RUNNING", SYMBOL, JSON.stringify(counters))
+        counters = { trade: 0, band: 0 }
+        last     = Date.now()
+      }
     }
   })
 
@@ -365,9 +375,9 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
     console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY, CROSS: CROSS }, null, 2))
-    var info    = yield account.loginless.rest.get('/all/info')
+    var info  = yield account.loginless.rest.get('/all/info')
     // console.log('current price', info)
-    var price   = info[SYMBOL].indexPrice
+    var price = info[SYMBOL].indexPrice
 
     currentBand = { price: price }
     yield moveAndMerge()
