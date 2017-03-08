@@ -8,7 +8,7 @@ local install
 git clone https://github.com/coinpit/coinpit-bots
 cd coinpit-bots
 npm install
-INS=BTCUSD DEPTH=0.5 STP=10 TGT=1 SPREAD=0.1 STEP=0.1 STRAT=collar QTY=5 node src/marketmaketBot.js /Users/rocky/Downloads/privateKeyFile.json
+TEMPLATE=BTCUSD DEPTH=0.5 STP=10 TGT=1 SPREAD=0.1 STEP=0.1 STRAT=collar QTY=5 node src/index.js /Users/rocky/Downloads/privateKeyFile.json
 # privateKeyFile.json : downloaded key file from coinpit application
 
 ```
@@ -18,7 +18,7 @@ using docker container
 ```
 
 docker run -d -v /path/to/privatekeydir:/privKey \
-       -e INS=BTCUSD -e DEPTH=0.5 -e STP=10 -e TGT=1 -e SPREAD=0.1 -e STEP=0.1 -e STRAT=collar -e QTY=5 \
+       -e TEMPLATE=BTCUSD -e DEPTH=0.5 -e STP=10 -e TGT=1 -e SPREAD=0.1 -e STEP=0.1 -e STRAT=collar -e QTY=5 \
       coinpit-bots:1.0.0 node dist/marketmakerBot.js /privKey/privateKeyFile.json
 # privateKeyFile.json : downloaded key file from coinpit application
 

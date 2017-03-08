@@ -333,22 +333,32 @@ function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   function isActive() {
-    var currentInstrument = instrument(SYMBOL)
-    return (currentInstrument && Date.now() <= currentInstrument.expiry)
+    try {
+      var currentInstrument = instrument(SYMBOL)
+      if (!currentInstrument) {
+        util.log('isActive: Current instrument for', SYMBOL, 'is', currentInstrument)
+        return false
+      }
+      return Date.now() <= currentInstrument.expiry
+    } catch (e) {
+      util.log("ERROR isActive", e.stack)
+      throw e
+    }
   }
 
   var last         = 0
   var moveAndMerge = bluebird.coroutine(function*() {
-    var active;
+    var active = true;
     try {
       active = isActive();
-      if (!active) return console.log('Shutting down bot for', SYMBOL)
+      if (!active) return util.log('Shutting down bot for', SYMBOL)
       yield* movePrice()
       yield* mergePositions()
     } catch (e) {
-      util.log(e.stack)
+      util.log("ERROR moveAndMerge", e.stack)
     } finally {
       if (active) setTimeout(moveAndMerge, 100)
+      else util.log('BOT', SYMBOL, 'not active', '"' + active + '"')
       if (Date.now() - last > 60000) {
         util.log("STILL RUNNING", SYMBOL, JSON.stringify(counters))
         counters = { trade: 0, band: 0 }
