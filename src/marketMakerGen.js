@@ -1,11 +1,11 @@
-var bluebird       = require('bluebird')
-var mangler        = require('mangler')
-var affirm         = require('affirm.js')
-var _              = require('lodash')
-var util           = require('util')
-var coinpit        = require('coinpit-client')
-var marketMakerBot = require('./marketMakerBot')
-var CoinpitFeed    = require("./coinpitFeed")
+var bluebird    = require('bluebird')
+var mangler     = require('mangler')
+var affirm      = require('affirm.js')
+var _           = require('lodash')
+var util        = require('util')
+var coinpit     = require('coinpit-client')
+var Bot         = require('./bot')
+var CoinpitFeed = require("./coinpitFeed")
 
 module.exports = (function* marketMakerGen(params) {
   var gen               = {}
@@ -50,7 +50,7 @@ module.exports = (function* marketMakerGen(params) {
     if (currentBots[symbol]) {
       return currentBots[symbol].setMarginPercent(botPercent)
     }
-    return currentBots[symbol] = (yield* marketMakerBot.create(symbol, params, account, botPercent))
+    return currentBots[symbol] = (yield* Bot.create(symbol, params, account, botPercent, params.bot))
   }
 
   gen.purgeExpired = function () {
@@ -71,7 +71,7 @@ module.exports = (function* marketMakerGen(params) {
   }
 
   gen.setListeners = function () {
-    coinpitFeed = coinpitFeed || CoinpitFeed(account.loginless.socket)
+    coinpitFeed  = coinpitFeed || CoinpitFeed(account.loginless.socket)
     var handlers = _.values(currentBots).map(bot => bot.listener)
     coinpitFeed.setListeners(handlers)
   }

@@ -4,21 +4,12 @@ var affirm   = require('affirm.js')
 var _        = require('lodash')
 var util     = require('util')
 
-module.exports = (function () {
-  var creator    = {}
-  creator.create = function*(symbol, botParams, account, marginPercent) {
-    return (yield* mmBot(symbol, botParams, account, marginPercent))
-  }
-  return creator
-})()
-
-function* mmBot(symbol, botParams, account, marginPercent) {
+module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   affirm(symbol, "Symbol required to create marketMakerBot")
 
   var bot = {}
 
   var baseurl = botParams.baseurl
-  var wallet  = botParams.wallet
   var PREMIUM = botParams.premium
   var DEPTH   = botParams.depth
   var SPREAD  = botParams.spread
@@ -70,8 +61,8 @@ function* mmBot(symbol, botParams, account, marginPercent) {
     var premium = bot.getPremium(inst.expiry - Date.now())
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
       buys[i] = newOrder('buy', i, QTY)
-    for (var i = mangler.fixed(price + sellSpread); i < mangler.fixed(price + sellSpread + depth); i = mangler.fixed(i + STEP))
-      sells[i] = newOrder('sell', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
+    for (var j = mangler.fixed(price + sellSpread); j < mangler.fixed(price + sellSpread + depth); j = mangler.fixed(j + STEP))
+      sells[j] = newOrder('sell', bot.getPremiumPrice(j, premium, inst.ticksize), QTY)
     return { buys: buys, sells: sells }
   }
 

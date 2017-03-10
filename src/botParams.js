@@ -12,25 +12,27 @@ module.exports = (function () {
   var DEFAULT_QTY     = 5
   var DEFAULT_PREMIUM = 6
   var DEFAULT_STRAT   = 'collar'
+  var DEFAULT_BOT     = 'marketMakerBot'
 
-  botParams.read = function(walletFileName) {
-    var params = {}
+  botParams.read = function (walletFileName) {
+    var params    = {}
     params.wallet = PrivateKeyReader(walletFileName)
     affirm(params.wallet, 'PrivateKey not found. Check key file.')
     affirm(process.env.TEMPLATE, "Define environment variable TEMPLATE for instrument series")
 
     params.baseurl  = process.env.BASE_URL
     params.baseurl  = params.baseurl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
-    params.depth    = (process.env.DEPTH  || DEFAULT_DEPTH) - 0
-    params.stop     = (process.env.STP    || DEFAULT_STP) - 0
-    params.target   = (process.env.TGT    || DEFAULT_TGT) - 0
+    params.depth    = (process.env.DEPTH || DEFAULT_DEPTH) - 0
+    params.stop     = (process.env.STP || DEFAULT_STP) - 0
+    params.target   = (process.env.TGT || DEFAULT_TGT) - 0
     params.spread   = (process.env.SPREAD || DEFAULT_SPREAD) - 0
-    params.step     = (process.env.STEP   || DEFAULT_STEP) - 0
-    params.quantity = (process.env.QTY    || DEFAULT_QTY) - 0
-    params.strat    = process.env.STRAT   || DEFAULT_STRAT
+    params.step     = (process.env.STEP || DEFAULT_STEP) - 0
+    params.quantity = (process.env.QTY || DEFAULT_QTY) - 0
+    params.strat    = process.env.STRAT || DEFAULT_STRAT
     params.cross    = process.env.CROSS === "true"
     params.template = process.env.TEMPLATE
     params.premium  = (process.env.PREMIUM || DEFAULT_PREMIUM) - 0
+    params.bot      = process.env.BOT || DEFAULT_BOT
 
     return params
   }

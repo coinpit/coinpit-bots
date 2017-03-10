@@ -40,7 +40,8 @@
     "strat":    "collar",
     "cross":    "true",
     "premium":  6,
-    "ins":      "BTCUSD"
+    "ins":      "BTCUSD",
+    "bot":      "marketMakerBot"
   },
   "marginPercent":    90,
   "instruments":      {
