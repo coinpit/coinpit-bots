@@ -1,15 +1,14 @@
-var bluebird  = require('bluebird')
-var mangler   = require('mangler')
-var affirm    = require('affirm.js')
-var botParams = require('./botParams')(process.argv[2])
-var _         = require('lodash')
-var util      = require('util')
+var bluebird         = require('bluebird')
+var mangler          = require('mangler')
+var affirm           = require('affirm.js')
+process.env.TEMPLATE = "something" // is a hack
+var botParams        = require('./botParams').read(process.argv[2])
+var _                = require('lodash')
+var util             = require('util')
+var coinpit     = require('coinpit-client')
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
-  var baseurl     = botParams.baseurl
-  var wallet      = botParams.wallet
-  var cc          = require("coinpit-client")(baseurl)
-  var account     = yield cc.getAccount(wallet.privateKey)
+  var account     = yield coinpit.getAccount(botParams.wallet.privateKey, botParams.baseurl)
   account.logging = true
   var bands       = {}
   var listener    = {}
@@ -19,7 +18,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function* init() {
-    require('./coinpitFeed')(listener, account.loginless.socket)
+    var feed = require('./coinpitFeed')(account.loginless.socket)
+    feed.setListeners([listener])
     bands = account.getIndexBands()
     setInterval(bluebird.coroutine(function*() {
       if (_.isEmpty(bands)) return
@@ -50,7 +50,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     openOrders[symbol][order.clientid] = order
     var availableMargin                = account.calculateAvailableMarginIfCrossShifted(openOrders)
     if (availableMargin >= 0) {
-      yield account.patchOrders(symbol,{ creates: [order] })
+      yield account.patchOrders(symbol, { creates: [order] })
     } else {
       yield* remove()
     }
@@ -90,7 +90,6 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
 //*********** fuzzy ***********************************************************
-
 
   function randomAction() {
     return getRandom([create, restCreate, remove, restRemove])
