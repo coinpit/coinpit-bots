@@ -5,10 +5,12 @@ process.env.TEMPLATE = "something" // is a hack
 var botParams        = require('./botParams').read(process.argv[2])
 var _                = require('lodash')
 var util             = require('util')
-var coinpit     = require('coinpit-client')
+var coinpit          = require('coinpit-client')
 
 var bot = bluebird.coroutine(function* mmBot(botParams) {
   var account     = yield coinpit.getAccount(botParams.wallet.privateKey, botParams.baseurl)
+  var socket      = account.loginless.socket
+  var rest        = account.loginless.rest
   account.logging = true
   var bands       = {}
   var listener    = {}
@@ -22,20 +24,75 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     feed.setListeners([listener])
     bands = account.getIndexBands()
     setInterval(bluebird.coroutine(function*() {
-      if (_.isEmpty(bands)) return
-      yield* randomAction()()
-    }), 100)
+      try {
+        if (_.isEmpty(bands)) return
+        yield* randomAction()()
+      } catch (e) {
+        util.log('fuzzbot init', e.stack)
+      }
+    }), 1000)
   }
 
 //*********** actions ***********************************************************
 
   function* create() {
-    var openOrders                     = account.getOpenOrders()
-    var symbol                         = symbolWithMinOrders(openOrders)
-    var orderType                      = randomOrderType()
-    var side                           = randomSide(symbol)
-    var price                          = orderType === 'MKT' ? undefined : randomPrice(symbol, side)
-    var order                          = {
+    var order = orderToCreate()
+    socket.send({ method: "POST", uri: "/order", body: [order], params: { instrument: order.instrument } })
+  }
+
+  function* update() {
+    var order = orderToUpdate()
+    if (order)
+      socket.send({ method: "PUT", uri: "/order", body: [order], params: { instrument: order.instrument } })
+  }
+
+  function* remove() {
+    var order = orderToRemove()
+    if (order)
+      socket.send({ method: "DELETE", uri: "/order", body: [order.uuid], params: { instrument: order.instrument } })
+  }
+
+  function* merge() {
+
+  }
+
+  function* split() {
+    var target = getTargetToSplit()
+    if (!target) return
+    yield account.patchOrders(target.instrument, { split: { uuid: target.uuid, quantity: 1 } })
+  }
+
+  function* restCreate() {
+    var order = orderToCreate()
+    yield rest.post("/contract/" + order.instrument + "/order/open", {}, [order])
+  }
+
+  function* restUpdate() {
+    var order = orderToUpdate()
+    if (order)
+      yield rest.put("/contract/" + order.instrument + "/order/open", [order])
+  }
+
+  function* restRemove() {
+    var order = orderToRemove()
+    if (order)
+      yield rest.del("/contract/" + order.instrument + "/order/open/" + order.uuid)
+  }
+
+  function orderToRemove() {
+    var allOrders = account.getOpenOrders()
+    var symbol    = symbolWithMaxOrders(allOrders)
+    var orders    = allOrders[symbol]
+    return getRandom(_.values(orders))
+  }
+
+  function orderToCreate() {
+    var openOrders = account.getOpenOrders()
+    var symbol     = symbolWithMinOrders(openOrders)
+    var orderType  = randomOrderType()
+    var side       = randomSide(symbol)
+    var price      = orderType === 'MKT' ? undefined : randomPrice(symbol, side)
+    return {
       clientid   : account.newUUID(),
       userid     : account.userid,
       side       : side,
@@ -47,52 +104,27 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       crossMargin: randomIsCrossMargin(),
       instrument : symbol
     }
-    openOrders[symbol][order.clientid] = order
-    var availableMargin                = account.calculateAvailableMarginIfCrossShifted(openOrders)
-    if (availableMargin >= 0) {
-      yield account.patchOrders(symbol, { creates: [order] })
-    } else {
-      yield* remove()
-    }
   }
 
-  function* update() {
-
+  function orderToUpdate() {
+    var allOrders = allOrdersAsList()
+    var filtered  = allOrders.filter(order => order.orderType === 'LMT' || order.orderType === 'STM' || order.orderType === 'SLM')
+    var order     = getRandom(filtered)
+    if (!order) return
+    order.price = randomPrice(order.instrument, order.side)
+    return order
   }
 
-  function* remove() {
-    var allOrders = account.getOpenOrders()
-    var symbol    = symbolWithMaxOrders(allOrders)
-    var orders    = allOrders[symbol]
-    var order     = getRandom(_.values(orders))
-    if (order)
-      yield account.patchOrders(symbol, { cancels: [order] })
-  }
-
-  function* merge() {
-
-  }
-
-  function* split() {
-
-  }
-
-  function* restCreate() {
-
-  }
-
-  function* restUpdate() {
-
-  }
-
-  function* restRemove() {
-
+  function getTargetToSplit() {
+    var allOrders = allOrdersAsList()
+    var targets   = allOrders.filter(order => order.orderType === 'TGT' && toBeFilled(order) > 1)
+    return getRandom(targets)
   }
 
 //*********** fuzzy ***********************************************************
 
   function randomAction() {
-    return getRandom([create, restCreate, remove, restRemove])
+    return getRandom([create, restCreate, remove, restRemove, split])
   }
 
   function randomPrice(symbol, side) {
@@ -141,11 +173,13 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   function sortedOrdersPerSymbol(orders) {
     orders              = orders || account.getOpenOrders()
-    var ordersPerSymbol = Object.keys(account.instruments).map(symbol => {
-      var count = { symbol: symbol, size: 0 }
-      Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
-      return count
-    })
+    var ordersPerSymbol = Object.keys(account.instruments)
+      .filter(symbol => account.instruments[symbol].expiry > Date.now())
+      .map(symbol => {
+        var count = { symbol: symbol, size: 0 }
+        Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
+        return count
+      })
     ordersPerSymbol.sort(function (a, b) {
       return a.size > b.size
     })
@@ -169,6 +203,13 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
 
   function instrument(symbol) {
     return account.instruments[symbol]
+  }
+
+  function allOrdersAsList() {
+    var allOrders = account.getOpenOrders()
+    var orders    = []
+    _.values(allOrders).forEach(ordersMap => _.values(ordersMap).forEach(order => orders.push(order)))
+    return orders
   }
 
   yield* init()
