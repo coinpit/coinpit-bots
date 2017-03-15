@@ -53,13 +53,27 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function* merge() {
+    var result = getMerges()
+    if (result)
+      yield account.patchOrders(result.symbol, { merge: result.merges })
+  }
 
+  function* restMerge() {
+    var result = getMerges()
+    if (result)
+      rest.patch("/contract/" + result.symbol + "/patch", {}, { merge: result.merges })
   }
 
   function* split() {
     var target = getTargetToSplit()
-    if (!target) return
-    yield account.patchOrders(target.instrument, { split: { uuid: target.uuid, quantity: 1 } })
+    if (target)
+      yield account.patchOrders(target.instrument, { split: { uuid: target.uuid, quantity: 1 } })
+  }
+
+  function* restSplit() {
+    var target = getTargetToSplit()
+    if (target)
+      rest.patch("/contract/" + target.symbol + "/patch", {}, { split: { uuid: target.uuid, quantity: 1 } })
   }
 
   function* restCreate() {
@@ -70,7 +84,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* restUpdate() {
     var order = orderToUpdate()
     if (order)
-      yield rest.put("/contract/" + order.instrument + "/order/open", [order])
+      yield rest.put("/contract/" + order.instrument + "/order/open", {}, [order])
   }
 
   function* restRemove() {
@@ -121,10 +135,29 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     return getRandom(targets)
   }
 
-//*********** fuzzy ***********************************************************
+  function getMerges() {
+    var allOrders = allOrdersAsList()
+    var stops     = {}
+    Object.keys(allOrders).forEach(symbol => {
+      var list = _.values(allOrders[symbol]).filter(order => order.orderType === 'STP' && !order.crossMargin).map(order => order.uuid)
+      if (list.length > 2) stops[symbol] = list
+    })
+    var symbol = getRandom(Object.keys(stops))
+    if (!symbol) return
+    var merges = []
+    stops.forEach(stop => {
+      merges.push(stop.uuid)
+      merges.push(stop.oco)
+    })
+    return { symbol: symbol, mreges: merges }
+  }
 
+//*********** fuzzy ***********************************************************
+  var restMethods = [restCreate, restRemove, restUpdate, restSplit, restMerge]
+  var socketMethods = [create, remove, update, split, merge]
+  var methods = restMethods.concat(socketMethods)
   function randomAction() {
-    return getRandom([create, restCreate, remove, restRemove, split])
+    return getRandom(methods)
   }
 
   function randomPrice(symbol, side) {
