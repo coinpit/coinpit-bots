@@ -73,7 +73,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* restSplit() {
     var target = getTargetToSplit()
     if (target)
-      rest.patch("/contract/" + target.symbol + "/patch", {}, { split: { uuid: target.uuid, quantity: 1 } })
+      rest.patch("/contract/" + target.instrument + "/patch", {}, { split: { uuid: target.uuid, quantity: 1 } })
   }
 
   function* restCreate() {
@@ -153,8 +153,8 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
 //*********** fuzzy ***********************************************************
-  var restMethods = [restCreate, restRemove, restUpdate, restSplit, restMerge]
-  var socketMethods = [create, remove, update, split, merge]
+  var restMethods = [restCreate,restCreate,restCreate,restCreate,restCreate,restCreate,restCreate, restRemove, restUpdate, restSplit, restMerge]
+  var socketMethods = [create,create,create,create,create,create,create,create, remove, update, split, merge]
   var methods = restMethods.concat(socketMethods)
   function randomAction() {
     return getRandom(methods)
