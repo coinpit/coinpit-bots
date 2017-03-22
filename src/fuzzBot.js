@@ -30,7 +30,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       } catch (e) {
         util.log('fuzzbot init', e.stack)
       }
-    }), 1000)
+    }), botParams.interval)
   }
 
 //*********** actions ***********************************************************
