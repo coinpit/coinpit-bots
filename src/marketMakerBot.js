@@ -17,7 +17,6 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   var STRAT   = botParams.strat
   var CROSS   = botParams.cross
   var STP     = botParams.stop
-  var TGT     = botParams.target
   var QTY     = botParams.quantity
   var SYMBOL  = bot.symbol = symbol
   var counters    = { trade: 0, band: 0 }
@@ -277,8 +276,12 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   function updateTargets(updates, targets, price) {
-    var step = Math.min(SPREAD, STEP)
-    var bid  = mangler.fixed(price - SPREAD + step), ask = mangler.fixed(price + SPREAD - step)
+    var step    = Math.min(SPREAD, STEP)
+    var bid     = mangler.fixed(price - SPREAD + step)
+    var inst    = instrument(SYMBOL)
+    // var ask = mangler.fixed(price + SPREAD - step)
+    var premium = bot.getPremium(inst.expiry - Date.now())
+    var ask     = bot.getPremiumPrice(price + SPREAD - step, premium, inst.ticksize)
     targets.forEach(order => {
       order.price = order.side === 'buy' ? bid : ask
       updates.push(order)
@@ -304,6 +307,13 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     return newOrder(side, orderPrice, size)
   }
 
+  bot.getTargetPoints = function (price) {
+    affirm(price > 0, "Price must be a positive number" )
+    var inst    = instrument(symbol)
+    var premium = bot.getPremium(inst.expiry - Date.now())
+    return (price * premium).toFixed(inst.ticksize) - 0
+  }
+
   function newOrder(side, price, quantity) {
     return {
       clientid   : account.newUUID(),
@@ -313,7 +323,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       price      : mangler.fixed(price),
       orderType  : 'LMT',
       stopPrice  : STP,
-      targetPrice: TGT,
+      targetPrice: bot.getTargetPoints(price),
       crossMargin: CROSS,
       instrument : SYMBOL
     }
@@ -375,7 +385,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'TGT': TGT, 'STRAT': STRAT, 'QTY': QTY, CROSS: CROSS }, null, 2))
+    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'STRAT': STRAT, 'QTY': QTY, CROSS: CROSS }, null, 2))
     var info  = yield account.loginless.rest.get('/all/info')
     // console.log('current price', info)
     var price = info[SYMBOL].indexPrice

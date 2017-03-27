@@ -33,7 +33,6 @@
     "baseurl":  "/",
     "depth":    2,
     "stop":     2,
-    "target":   2,
     "spread":   0.5,
     "step":     0.1,
     "quantity": 5,
@@ -109,5 +108,9 @@
         }
       ]
     }
+  },
+  "targetPoints":{
+    "price": 1200,
+    "result": 3.5
   }
 }

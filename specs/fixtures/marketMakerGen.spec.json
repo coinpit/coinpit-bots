@@ -17,7 +17,6 @@
     "baseurl":      "/",
     "depth":        "2",
     "stopPoints":   "2",
-    "targetPoints": "2",
     "spread":       "0.5",
     "step":         "0.1",
     "quantity":     "5",

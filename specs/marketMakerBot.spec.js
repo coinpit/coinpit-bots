@@ -89,4 +89,12 @@ describe('marketMakerBot', function () {
     account.patchOrders.restore()
     account.getOpenOrders.restore()
   })
+  it("should calculate target price using premium", function*(){
+    var timestamp = Date.parse(fixtures.testDateToday)
+    var clock     = sinon.useFakeTimers(timestamp)
+    var bot = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
+    var targetPoints = bot.getTargetPoints(fixtures.targetPoints.price)
+    clock.restore()
+    expect(targetPoints).to.eql(fixtures.targetPoints.result)
+  })
 })
