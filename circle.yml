@@ -13,7 +13,7 @@ deployment:
     branch: master
     commands:
       - docker info
-      - docker build -t coinpit/coinpit-bots:1.0.0 .
+      - docker build -t coinpit/coinpit-bots:2.0.0 .
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push coinpit/coinpit-bots
   multi-instrument:

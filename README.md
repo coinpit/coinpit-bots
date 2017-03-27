@@ -19,7 +19,7 @@ using docker container
 
 docker run -d -v /path/to/privatekeydir:/privKey \
        -e TEMPLATE=BTCUSD -e DEPTH=0.5 -e STP=10 -e TGT=1 -e SPREAD=0.1 -e STEP=0.1 -e STRAT=collar -e QTY=5 \
-      coinpit-bots:1.0.0 node dist/marketmakerBot.js /privKey/privateKeyFile.json
+      coinpit-bots:2.0.0 node dist/marketmakerBot.js /privKey/privateKeyFile.json
 # privateKeyFile.json : downloaded key file from coinpit application
 
 ```
