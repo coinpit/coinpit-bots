@@ -1,25 +1,54 @@
-module.exports = function (listener, socket) {
+var affirm = require('affirm.js')
+
+module.exports = function (socket) {
   // var socket = require("socket.io-client")(coinpitUrl, { rejectUnauthorized: true })
+  var feed      = {}
+  var listeners = []
 
-  socket.on('trade', function (trade) {
-    process.nextTick(listener.trade.bind(listener, trade.price))
-  })
+  feed.setListeners = function (handlers) {
+    affirm(Array.isArray(handlers), "handlers must be an Array")
+    listeners = handlers
+  }
 
-  socket.on('orderbook', function (orderbook) {
-  })
+  var counters        = {}
+  var eventHandlerMap = {
+    trade        : "trade",
+    orderbook    : "orderbook",
+    priceband    : "priceband",
+    account      : "userMessage",
+    order_patch  : "orderPatch",
+    difforderbook: "difforderbook"
+  }
 
-  socket.on('priceband', function (band) {
-    process.nextTick(listener.priceband.bind(listener, band))
-  })
+  function addListeners() {
+    Object.keys(eventHandlerMap).forEach(topic => {
+      function eventListener(response) {
+        counters[topic]++
+        listeners.forEach(listener => {
+          var handler = listener[eventHandlerMap[topic]]
+          if (handler)
+            process.nextTick(handler.bind(handler, response))
+        })
+      }
 
-  socket.on('user_message', function (msg) {
-    process.nextTick(listener.userMessage.bind(listener))
-  })
+      socket.on(topic, eventListener)
+    })
+  }
 
-  socket.on('order_patch', function (response) {
-    process.nextTick(listener.orderPatch.bind(listener, response))
-  })
+  setInterval(function () {
+    console.log('messages recieved on socket', JSON.stringify(counters))
+    resetCounters()
+  }, 60000)
 
-  socket.on('difforderbook', function (difforderbook) {
-  })
+  function resetCounters() {
+    counters = { trade: 0, orderbook: 0, priceband: 0, account: 0, order_patch: 0, difforderbook: 0 }
+  }
+
+  function init() {
+    resetCounters()
+    addListeners()
+  }
+
+  init()
+  return feed
 }
