@@ -17,6 +17,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   var STRAT   = botParams.strat
   var CROSS   = botParams.cross
   var STP     = botParams.stop
+  var TGT     = botParams.target
   var QTY     = botParams.quantity
   var SYMBOL  = bot.symbol = symbol
   var counters    = { trade: 0, band: 0 }
@@ -59,7 +60,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     console.log(SYMBOL, DEPTH, STEP, max, 'price-spread', mangler.fixed(price - buySpread), 'price - buySpread - depth', mangler.fixed(price - buySpread - depth))
     var premium = bot.getPremium(inst.expiry - Date.now())
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
-      buys[i] = newOrder('buy', i, QTY)
+      buys[i] = newOrder('buy', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
     for (var j = mangler.fixed(price + sellSpread); j < mangler.fixed(price + sellSpread + depth); j = mangler.fixed(j + STEP))
       sells[j] = newOrder('sell', bot.getPremiumPrice(j, premium, inst.ticksize), QTY)
     return { buys: buys, sells: sells }
@@ -277,10 +278,9 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
 
   function updateTargets(updates, targets, price) {
     var step    = Math.min(SPREAD, STEP)
-    var bid     = mangler.fixed(price - SPREAD + step)
     var inst    = instrument(SYMBOL)
-    // var ask = mangler.fixed(price + SPREAD - step)
     var premium = bot.getPremium(inst.expiry - Date.now())
+    var bid     = bot.getPremiumPrice(price - SPREAD + step, premium, inst.ticksize)
     var ask     = bot.getPremiumPrice(price + SPREAD - step, premium, inst.ticksize)
     targets.forEach(order => {
       order.price = order.side === 'buy' ? bid : ask
@@ -302,19 +302,13 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   function newRandomOrder(side, price, distance) {
     var size       = getRandomInt(2, 12)
     var buyStep    = mangler.fixed(getRandomInt(1, 4) / 10)
-    var delta      = mangler.fixed((side == 'buy' ? -1 : 1) * (SPREAD + distance))
+    var delta      = mangler.fixed((side === 'buy' ? -1 : 1) * (SPREAD + distance))
     var orderPrice = mangler.fixed(price + delta)
     return newOrder(side, orderPrice, size)
   }
 
-  bot.getTargetPoints = function (price) {
-    affirm(price > 0, "Price must be a positive number" )
-    var inst    = instrument(symbol)
-    var premium = bot.getPremium(inst.expiry - Date.now())
-    return (price * premium).toFixed(inst.ticksize) - 0
-  }
-
   function newOrder(side, price, quantity) {
+    var inst = instrument(SYMBOL)
     return {
       clientid   : account.newUUID(),
       userid     : account.userid,
@@ -323,7 +317,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       price      : mangler.fixed(price),
       orderType  : 'LMT',
       stopPrice  : STP,
-      targetPrice: bot.getTargetPoints(price),
+      targetPrice: mangler.fixed(SPREAD * 2 - 0.1, inst.ticksize),
       crossMargin: CROSS,
       instrument : SYMBOL
     }
@@ -385,7 +379,20 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-    console.log('botParams', JSON.stringify({ 'baseurl': baseurl, 'SYMBOL': SYMBOL, 'MARGINPERCENT': marginPercent, 'DEPTH': DEPTH, 'SPREAD': SPREAD, 'STEP': STEP, 'STP': STP, 'STRAT': STRAT, 'QTY': QTY, CROSS: CROSS }, null, 2))
+    console.log('botParams', JSON.stringify({
+                                              'baseurl'      : baseurl,
+                                              'SYMBOL'       : SYMBOL,
+                                              'MARGINPERCENT': marginPercent,
+                                              'DEPTH'        : DEPTH,
+                                              'SPREAD'       : SPREAD,
+                                              'STEP'         : STEP,
+                                              'STP'          : STP,
+                                              'TGT'          : TGT,
+                                              'STRAT'        : STRAT,
+                                              'QTY'          : QTY,
+                                              CROSS          : CROSS,
+                                              PREMIUM        : PREMIUM
+                                            }, null, 2))
     var info  = yield account.loginless.rest.get('/all/info')
     // console.log('current price', info)
     var price = info[SYMBOL].indexPrice

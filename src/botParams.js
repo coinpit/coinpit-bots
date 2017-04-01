@@ -6,7 +6,7 @@ module.exports = (function () {
 
   var DEFAULT_DEPTH    = 0.5
   var DEFAULT_STP      = 10
-  // var DEFAULT_TGT      = 1
+  var DEFAULT_TGT      = 1
   var DEFAULT_SPREAD   = 0.1
   var DEFAULT_STEP     = 0.1
   var DEFAULT_QTY      = 5
@@ -25,7 +25,7 @@ module.exports = (function () {
     params.baseurl  = params.baseurl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
     params.depth    = (process.env.DEPTH || DEFAULT_DEPTH) - 0
     params.stop     = (process.env.STP || DEFAULT_STP) - 0
-    // params.target   = (process.env.TGT || DEFAULT_TGT) - 0
+    params.target   = (process.env.TGT || DEFAULT_TGT) - 0
     params.spread   = (process.env.SPREAD || DEFAULT_SPREAD) - 0
     params.step     = (process.env.STEP || DEFAULT_STEP) - 0
     params.quantity = (process.env.QTY || DEFAULT_QTY) - 0
