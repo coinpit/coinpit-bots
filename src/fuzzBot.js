@@ -55,25 +55,25 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* merge() {
     var result = getMerges()
     if (result)
-      yield account.patchOrders(result.symbol, { merge: result.merges })
+      yield account.patchOrders(result.symbol, { merge: result.merge })
   }
 
   function* restMerge() {
     var result = getMerges()
     if (result)
-      rest.patch("/contract/" + result.symbol + "/order/open", {}, [{ merge: result.merges }])
+      rest.patch("/contract/" + result.symbol + "/order/open", {}, [{ op:"merge", value: result.merge }])
   }
 
   function* split() {
     var target = getTargetToSplit()
     if (target)
-      yield account.patchOrders(target.instrument, { split: { uuid: target.uuid, quantity: 1 } })
+      yield account.patchOrders(target.instrument, { split: { from: target.uuid, value: 1 } })
   }
 
   function* restSplit() {
     var target = getTargetToSplit()
     if (target)
-      rest.patch("/contract/" + target.instrument + "/order/open", {}, [{ split: { uuid: target.uuid, quantity: 1 } }])
+      rest.patch("/contract/" + target.instrument + "/order/open", {}, [{ op: "split", from: target.uuid, value: 1 }])
   }
 
   function* restCreate() {
@@ -136,20 +136,20 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   }
 
   function getMerges() {
-    var allOrders = allOrdersAsList()
+    var allOrders = account.getOpenOrders()
     var stops     = {}
     Object.keys(allOrders).forEach(symbol => {
-      var list = _.values(allOrders[symbol]).filter(order => order.orderType === 'STP' && !order.crossMargin).map(order => order.uuid)
+      var list = _.values(allOrders[symbol]).filter(order => order.orderType === 'STP' && !order.crossMargin)
       if (list.length > 2) stops[symbol] = list
     })
     var symbol = getRandom(Object.keys(stops))
     if (!symbol) return
     var merges = []
-    stops.forEach(stop => {
+    stops[symbol].forEach(stop => {
       merges.push(stop.uuid)
       merges.push(stop.oco)
     })
-    return { symbol: symbol, mreges: merges }
+    return { symbol: symbol, merge: merges }
   }
 
 //*********** fuzzy ***********************************************************

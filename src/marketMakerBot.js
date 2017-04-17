@@ -154,7 +154,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   function generatePatch(cancels, creates) {
     var buys  = replaceCancelToUpdate(cancels.buys, creates.buys)
     var sells = replaceCancelToUpdate(cancels.sells, creates.sells)
-    return { cancels: buys.cancels.concat(sells.cancels), updates: buys.updates.concat(sells.updates), creates: buys.creates.concat(sells.creates) }
+    return { remove: buys.remove.concat(sells.remove), replace: buys.replace.concat(sells.replace), add: buys.add.concat(sells.add) }
   }
 
   function replaceCancelToUpdate(cancels, creates) {
@@ -172,7 +172,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       updates.push(cancel)
       cancel = cancels.shift()
     }
-    return { cancels: cancels, updates: updates, creates: creates }
+    return { remove: cancels, replace: updates, add: creates }
   }
 
   listener.orderPatch = bluebird.coroutine(function*(response) {
@@ -238,7 +238,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       var cancels = getCancels(currentBook, newBook)
       var creates = getCreates(currentBook, newBook)
       var patch   = generatePatch(cancels, creates)
-      updateTargets(patch.updates, currentBook.targets, price)
+      updateTargets(patch.replace, currentBook.targets, price)
       yield account.patchOrders(SYMBOL, patch)
     } catch (e) {
       util.log(e);
