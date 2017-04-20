@@ -85,7 +85,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       if (ordersByPrice[order.price]) return ordersToBeRemoved.push(order)
       ordersByPrice[order.price] = order
     })
-    if (ordersToBeRemoved.length > 0) yield account.patchOrders(SYMBOL, { cancels: ordersToBeRemoved })
+    if (ordersToBeRemoved.length > 0) yield account.patchOrders(SYMBOL, { remove: ordersToBeRemoved })
   }
 
   var getSatoshiPerQuantity = {
