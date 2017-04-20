@@ -98,7 +98,7 @@
       }
     },
     "result": {
-      "cancels": [
+      "remove": [
         {
           "price": 420,
           "uuid":  "order3"
