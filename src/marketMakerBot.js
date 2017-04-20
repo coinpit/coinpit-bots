@@ -57,12 +57,15 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       sellSpread         = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
     }
 
-    console.log(SYMBOL, DEPTH, STEP, max, 'price-spread', mangler.fixed(price - buySpread), 'price - buySpread - depth', mangler.fixed(price - buySpread - depth))
     var premium = bot.getPremium(inst.expiry - Date.now())
-    for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP))
-      buys[i] = newOrder('buy', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
-    for (var j = mangler.fixed(price + sellSpread); j < mangler.fixed(price + sellSpread + depth); j = mangler.fixed(j + STEP))
-      sells[j] = newOrder('sell', bot.getPremiumPrice(j, premium, inst.ticksize), QTY)
+    for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP)) {
+      var buy         = newOrder('buy', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
+      buys[buy.price] = buy
+    }
+    for (var j = mangler.fixed(price + sellSpread); j < mangler.fixed(price + sellSpread + depth); j = mangler.fixed(j + STEP)) {
+      var sell          = newOrder('sell', bot.getPremiumPrice(j, premium, inst.ticksize), QTY)
+      sells[sell.price] = sell
+    }
     return { buys: buys, sells: sells }
   }
 
@@ -234,16 +237,29 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       var orders      = getOrders()
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(price)
-
-      var cancels = getCancels(currentBook, newBook)
-      var creates = getCreates(currentBook, newBook)
-      var patch   = generatePatch(cancels, creates)
+      var patch       = bot.getPatch(currentBook, newBook)
       updateTargets(patch.replace, currentBook.targets, price)
       yield account.patchOrders(SYMBOL, patch)
     } catch (e) {
       util.log(e);
       util.log(e.stack)
     }
+  }
+
+  bot.getPatch = function (currentBook, newBook) {
+    // var newBookClone     = _.cloneDeep(newBook)
+    // var currentBookClone = _.cloneDeep(currentBook)
+    var cancels          = getCancels(currentBook, newBook)
+    // var cancelsClone     = _.cloneDeep(cancels)
+    var creates          = getCreates(currentBook, newBook)
+    // var createsClone     = _.cloneDeep(creates)
+    var patch            = generatePatch(cancels, creates)
+    // debugPrint([], currentBookClone, newBookClone, patch, cancelsClone, createsClone)
+    return patch
+  }
+
+  function debugPrint(orders, currentBook, newBook, patch, cancelsClone, createsClone) {
+    console.log(JSON.stringify({ orders: orders, currentBook: currentBook, newBook: newBook, patch: patch, cancels: cancelsClone, creates: createsClone }))
   }
 
   function* mergePositions() {

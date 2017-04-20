@@ -109,8 +109,661 @@
       ]
     }
   },
-  "targetPoints":{
-    "price": 1200,
+  "targetPoints":     {
+    "price":  1200,
     "result": 3.5
+  },
+  "collar":           {
+    "price":  1200,
+    "margin": 55701693,
+    "result": {
+      "buys":  {
+        "1203":   {
+          "side":     "buy",
+          "quantity": 5,
+          "price":    1203
+        },
+        "1202.9": {
+          "side":     "buy",
+          "quantity": 5,
+          "price":    1202.9
+        },
+        "1202.8": {
+          "side":     "buy",
+          "quantity": 5,
+          "price":    1202.8
+        },
+        "1202.7": {
+          "side":     "buy",
+          "quantity": 5,
+          "price":    1202.7
+        }
+      },
+      "sells": {
+        "1204":   {
+          "side":     "sell",
+          "quantity": 5,
+          "price":    1204
+        },
+        "1204.1": {
+          "side":     "sell",
+          "quantity": 5,
+          "price":    1204.1
+        },
+        "1204.2": {
+          "side":     "sell",
+          "quantity": 5,
+          "price":    1204.2
+        },
+        "1204.3": {
+          "side":     "sell",
+          "quantity": 5,
+          "price":    1204.3
+        }
+      }
+    }
+  },
+  "createPatch":      {
+    "currentBook": {
+      "buys":    {
+        "1234":   {
+          "uuid":     "f96ed381-25f3-11e7-a359-fc37433a9c21",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234
+        },
+        "1235":   {
+          "uuid":     "1783c5a0-25f0-11e7-ac6b-0b7b7b241d4c",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1235
+        },
+        "1234.7": {
+          "uuid":     "3158ea60-23ab-11e7-bad1-11ffbcebb073",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.7
+        },
+        "1233.5": {
+          "uuid":     "105f7391-25ec-11e7-9ff2-efed15accea3",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.5
+        },
+        "1233.4": {
+          "uuid":     "cc6298a3-25ed-11e7-a9a4-02aa715ecbae",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.4
+        },
+        "1235.3": {
+          "uuid":     "fc67afe0-25ed-11e7-a7e7-113f61f74354",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1235.3
+        },
+        "1235.2": {
+          "uuid":     "ba3e03c1-25ee-11e7-bae3-35bb85588b22",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1235.2
+        },
+        "1235.1": {
+          "uuid":     "c13db3a0-25ee-11e7-a109-e535b226f7db",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1235.1
+        },
+        "1233.7": {
+          "uuid":     "c13db3a1-25ee-11e7-bd4d-e9463261b61b",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.7
+        },
+        "1234.9": {
+          "uuid":     "1783c5a1-25f0-11e7-9572-ead70ec5f990",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.9
+        },
+        "1234.8": {
+          "uuid":     "627d5851-25f0-11e7-8255-e5ba64097650",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.8
+        },
+        "1234.6": {
+          "uuid":     "627d5852-25f0-11e7-9180-b342517d4e71",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.6
+        },
+        "1234.5": {
+          "uuid":     "627d5853-25f0-11e7-9916-e5ce6d901ef2",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.5
+        },
+        "1234.4": {
+          "uuid":     "bfbf1801-25f0-11e7-8339-5ea3de542e84",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.4
+        },
+        "1234.3": {
+          "uuid":     "f96eac70-25f3-11e7-8ee4-5223a0aa180e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.3
+        },
+        "1234.2": {
+          "uuid":     "f96eac71-25f3-11e7-86de-4260b82b868e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.2
+        },
+        "1234.1": {
+          "uuid":     "f96ed380-25f3-11e7-b6bf-a0cf4fd50fb5",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.1
+        },
+        "1233.9": {
+          "uuid":     "f96ed382-25f3-11e7-b1de-6573d349ec0e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.9
+        },
+        "1233.8": {
+          "uuid":     "f96ed383-25f3-11e7-8d8a-eb234d88f69e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.8
+        },
+        "1233.6": {
+          "uuid":     "f96ed384-25f3-11e7-aa6c-11bc66af196e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.6
+        }
+      },
+      "sells":   {
+        "1237":   {
+          "uuid":     "49f8c0e1-25ef-11e7-a4fb-e3975187ad5a",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237
+        },
+        "1238":   {
+          "uuid":     "f96ed385-25f3-11e7-9777-029bad00d712",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1238
+        },
+        "1237.7": {
+          "uuid":     "a48b3c55-2571-11e7-be59-f01991d18563",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.7
+        },
+        "1236.8": {
+          "uuid":     "1f0bb523-25ec-11e7-b531-d2f3c140d867",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.8
+        },
+        "1236.9": {
+          "uuid":     "e1a73237-25ec-11e7-8745-a6cd4dc59254",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.9
+        },
+        "1237.1": {
+          "uuid":     "4a148643-25ef-11e7-beeb-f2141e8290cc",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.1
+        },
+        "1237.2": {
+          "uuid":     "aed9cbd0-25ef-11e7-8a8b-935608616e08",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.2
+        },
+        "1237.3": {
+          "uuid":     "b64ef9d1-25ef-11e7-8074-e16687f530fa",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.3
+        },
+        "1237.4": {
+          "uuid":     "b64ef9d2-25ef-11e7-95fa-1b9d4a6c7a8b",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.4
+        },
+        "1237.5": {
+          "uuid":     "1766eed6-25f0-11e7-b4e6-6225f1b56891",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.5
+        },
+        "1236.7": {
+          "uuid":     "176715e0-25f0-11e7-a82b-115682218f66",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.7
+        },
+        "1237.6": {
+          "uuid":     "b7013d60-25f0-11e7-b1ca-9ee672289f09",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.6
+        },
+        "1237.8": {
+          "uuid":     "bfbf1803-25f0-11e7-957a-8ae4c6e8af52",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.8
+        },
+        "1237.9": {
+          "uuid":     "bfbf1804-25f0-11e7-93a3-5ca2feb41833",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.9
+        },
+        "1238.1": {
+          "uuid":     "f96ed386-25f3-11e7-9a20-5d050307d4f4",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1238.1
+        },
+        "1238.2": {
+          "uuid":     "f96efa90-25f3-11e7-b482-c7bb8a384849",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1238.2
+        },
+        "1238.3": {
+          "uuid":     "f96efa91-25f3-11e7-87e9-9a8c1d1ecc90",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1238.3
+        },
+        "1238.4": {
+          "uuid":     "f96efa92-25f3-11e7-b694-f8ba178025d4",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1238.4
+        },
+        "1236.5": {
+          "uuid":     "f96f21a0-25f3-11e7-bab7-6bf46b7c2bb5",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.5
+        },
+        "1236.6": {
+          "uuid":     "f96f21a1-25f3-11e7-babf-0fd73c177e18",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.6
+        }
+      },
+      "targets": [],
+      "stops":   []
+    },
+    "newBook":     {
+      "buys":  {
+        "1233":   {
+          "clientid": "90b0418a-2965-4fec-8c44-1445e81d015d",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233
+        },
+        "1234":   {
+          "clientid": "6d4ab843-2f7f-42a4-bf65-a8729a786606",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234
+        },
+        "1234.3": {
+          "clientid": "5d769a0c-7422-48f1-946e-f9f001cfba1e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.3
+        },
+        "1234.2": {
+          "clientid": "f8440f0e-8825-4ec9-8e91-a36b8b78df7f",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.2
+        },
+        "1234.1": {
+          "clientid": "97a7cf4b-fd0c-4f7c-ab69-587c21dcabe4",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1234.1
+        },
+        "1233.9": {
+          "clientid": "29396f94-28f2-43a6-9a13-0709721659d9",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.9
+        },
+        "1233.8": {
+          "clientid": "c392d1d2-31c2-42c3-a26e-eafb758dfb8f",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.8
+        },
+        "1233.7": {
+          "clientid": "5a3df022-d315-48c6-8d7d-1706c361ff79",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.7
+        },
+        "1233.6": {
+          "clientid": "5906b872-2e40-46c8-9160-0d69c006889e",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.6
+        },
+        "1233.5": {
+          "clientid": "942ccade-f5b7-4ae5-930a-c617c13aafbc",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.5
+        },
+        "1233.4": {
+          "clientid": "5b1a426e-8a0b-4854-b7cd-30fb32f03e05",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.4
+        },
+        "1233.3": {
+          "clientid": "639bced1-46a9-4281-8bd3-2e969a877ffc",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.3
+        },
+        "1233.2": {
+          "clientid": "45c705af-d41e-4e80-88fc-9f1067e21461",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.2
+        },
+        "1233.1": {
+          "clientid": "7bce4097-5f6d-43d8-ac25-dbabcc68b436",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.1
+        },
+        "1232.9": {
+          "clientid": "1ebef22a-01b4-4ab1-9d64-edbb673561f4",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.9
+        },
+        "1232.8": {
+          "clientid": "5e608253-62aa-43a2-ae60-04b0970fa0ff",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.8
+        },
+        "1232.7": {
+          "clientid": "d41b8bfa-61a4-4c7d-a43f-411bc9e1ec78",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.7
+        },
+        "1232.6": {
+          "clientid": "e5ba363a-6a6d-400a-b550-5365b1e890b6",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.6
+        },
+        "1232.5": {
+          "clientid": "6d86f84f-d003-4914-8fdd-14c8ad596236",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.5
+        },
+        "1232.4": {
+          "clientid": "9e3165be-7f7d-432d-896f-e0ab5d0b7452",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.4
+        }
+      },
+      "sells": {
+        "1236":   {
+          "clientid": "ab73a196-c405-4999-aab4-e9d2121a9cca",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236
+        },
+        "1237":   {
+          "clientid": "888e46d6-06b9-468f-9e8d-0f660fb79947",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237
+        },
+        "1235.5": {
+          "clientid": "a548f5d9-d2a3-4696-b28e-1b5cbe9eb73f",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.5
+        },
+        "1235.6": {
+          "clientid": "2b9365bc-e7fc-4178-9e65-7200b9dd7763",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.6
+        },
+        "1235.7": {
+          "clientid": "54f6918c-d4ab-49d0-9dd5-7a2feadec00b",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.7
+        },
+        "1235.8": {
+          "clientid": "a1e064ff-a737-480b-8851-92d6e7f2bceb",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.8
+        },
+        "1235.9": {
+          "clientid": "798a48e0-31db-4790-92c7-0f5e9a566ba9",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.9
+        },
+        "1236.1": {
+          "clientid": "adf77579-eef6-47cf-a28e-4f19d919f291",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.1
+        },
+        "1236.2": {
+          "clientid": "f14fd19d-a0f3-4060-91d7-b9b2cc63b5d5",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.2
+        },
+        "1236.3": {
+          "clientid": "a4023d87-644e-4031-bb53-4a32db92124b",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.3
+        },
+        "1236.4": {
+          "clientid": "4e5fe404-e91a-4a35-b153-ac8185f17bed",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.4
+        },
+        "1236.5": {
+          "clientid": "d218a5a4-c034-416b-b1cf-68d345036cf0",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.5
+        },
+        "1236.6": {
+          "clientid": "0b3b69ee-6e4b-47bc-b942-fecc561e2025",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.6
+        },
+        "1236.7": {
+          "clientid": "993be0df-148d-4b80-9162-84b2a2af2651",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.7
+        },
+        "1236.8": {
+          "clientid": "9efd56ea-ba54-484e-9fc2-1229619014ff",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.8
+        },
+        "1236.9": {
+          "clientid": "81aa0179-0188-4477-8c1f-9fc5a56ea962",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.9
+        },
+        "1237.1": {
+          "clientid": "9a069d82-e5ad-4dc9-8181-290197d96abe",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.1
+        },
+        "1237.2": {
+          "clientid": "9ccb993d-e989-4285-b2b4-eb99a7dbe425",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.2
+        },
+        "1237.3": {
+          "clientid": "5a540ea0-3e4e-498c-91e2-bebba61d98b3",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.3
+        },
+        "1237.4": {
+          "clientid": "2c23562b-51f1-4b90-b982-0e4897f5bb36",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1237.4
+        }
+      }
+    },
+    "patch":       {
+      "remove":  [],
+      "replace": [
+        {
+          "uuid":     "1783c5a0-25f0-11e7-ac6b-0b7b7b241d4c",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233
+        }, {
+          "uuid":     "3158ea60-23ab-11e7-bad1-11ffbcebb073",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.3
+        }, {
+          "uuid":     "fc67afe0-25ed-11e7-a7e7-113f61f74354",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.2
+        }, {
+          "uuid":     "ba3e03c1-25ee-11e7-bae3-35bb85588b22",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1233.1
+        }, {
+          "uuid":     "c13db3a0-25ee-11e7-a109-e535b226f7db",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.9
+        }, {
+          "uuid":     "1783c5a1-25f0-11e7-9572-ead70ec5f990",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.8
+        }, {
+          "uuid":     "627d5851-25f0-11e7-8255-e5ba64097650",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.7
+        }, {
+          "uuid":     "627d5852-25f0-11e7-9180-b342517d4e71",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.6
+        }, {
+          "uuid":     "627d5853-25f0-11e7-9916-e5ce6d901ef2",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.5
+        }, {
+          "uuid":     "bfbf1801-25f0-11e7-8339-5ea3de542e84",
+          "side":     "buy",
+          "quantity": 40,
+          "price":    1232.4
+        }, {
+          "uuid":     "f96ed385-25f3-11e7-9777-029bad00d712",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236
+        }, {
+          "uuid":     "a48b3c55-2571-11e7-be59-f01991d18563",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.5
+        }, {
+          "uuid":     "1766eed6-25f0-11e7-b4e6-6225f1b56891",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.6
+        }, {
+          "uuid":     "b7013d60-25f0-11e7-b1ca-9ee672289f09",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.7
+        }, {
+          "uuid":     "bfbf1803-25f0-11e7-957a-8ae4c6e8af52",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.8
+        }, {
+          "uuid":     "bfbf1804-25f0-11e7-93a3-5ca2feb41833",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1235.9
+        }, {
+          "uuid":     "f96ed386-25f3-11e7-9a20-5d050307d4f4",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.1
+        }, {
+          "uuid":     "f96efa90-25f3-11e7-b482-c7bb8a384849",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.2
+        }, {
+          "uuid":     "f96efa91-25f3-11e7-87e9-9a8c1d1ecc90",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.3
+        }, {
+          "uuid":     "f96efa92-25f3-11e7-b694-f8ba178025d4",
+          "side":     "sell",
+          "quantity": 40,
+          "price":    1236.4
+        }
+      ],
+      "add":     []
+    }
   }
 }
