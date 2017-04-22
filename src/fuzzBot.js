@@ -61,7 +61,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* restMerge() {
     var result = getMerges()
     if (result)
-      rest.patch("/contract/" + result.symbol + "/order/open", {}, [{ op:"merge", value: result.merge }])
+      rest.patch("/order", {}, [{ op:"merge", value: result.merge }])
   }
 
   function* split() {
@@ -73,24 +73,24 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* restSplit() {
     var target = getTargetToSplit()
     if (target)
-      rest.patch("/contract/" + target.instrument + "/order/open", {}, [{ op: "split", from: target.uuid, value: 1 }])
+      rest.patch("/order", {}, [{ op: "split", from: target.uuid, value: 1 }])
   }
 
   function* restCreate() {
     var order = orderToCreate()
-    yield rest.post("/contract/" + order.instrument + "/order/open", {}, [order])
+    yield rest.post("/order", {}, [order])
   }
 
   function* restUpdate() {
     var order = orderToUpdate()
     if (order)
-      yield rest.put("/contract/" + order.instrument + "/order/open", {}, [order])
+      yield rest.put("/order", {}, [order])
   }
 
   function* restRemove() {
     var order = orderToRemove()
     if (order)
-      yield rest.del("/contract/" + order.instrument + "/order/open/" + order.uuid)
+      yield rest.del("/order/" + order.uuid)
   }
 
   function orderToRemove() {
