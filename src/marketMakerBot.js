@@ -85,10 +85,10 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var ordersByPrice     = {}
     _.values(openOrders).forEach(order => {
       if (order.orderType === 'STP' || order.orderType === 'TGT') return
-      if (ordersByPrice[order.price]) return ordersToBeRemoved.push(order)
+      if (ordersByPrice[order.price]) return ordersToBeRemoved.push(order.uuid)
       ordersByPrice[order.price] = order
     })
-    if (ordersToBeRemoved.length > 0) yield account.patchOrders(SYMBOL, { remove: ordersToBeRemoved })
+    if (ordersToBeRemoved.length > 0) yield account.patchOrders([{ op: 'remove', value: ordersToBeRemoved }])
   }
 
   var getSatoshiPerQuantity = {
@@ -239,27 +239,53 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       var newBook     = createNewBook(price)
       var patch       = bot.getPatch(currentBook, newBook)
       updateTargets(patch.replace, currentBook.targets, price)
-      yield account.patchOrders(SYMBOL, patch)
+      var patchPayload = getPatchPayload(patch)
+      if (patchPayload.length === 0) return
+      yield account.patchOrders(patchPayload)
     } catch (e) {
       util.log(e);
       util.log(e.stack)
     }
   }
 
-  bot.getPatch = function (currentBook, newBook) {
-    // var newBookClone     = _.cloneDeep(newBook)
-    // var currentBookClone = _.cloneDeep(currentBook)
-    var cancels          = getCancels(currentBook, newBook)
-    // var cancelsClone     = _.cloneDeep(cancels)
-    var creates          = getCreates(currentBook, newBook)
-    // var createsClone     = _.cloneDeep(creates)
-    var patch            = generatePatch(cancels, creates)
-    // debugPrint([], currentBookClone, newBookClone, patch, cancelsClone, createsClone)
-    return patch
+  function getPatchPayload(patch) {
+    var payload = []
+    if (isPatchArray(patch.remove)) {
+      payload.push({ op: 'remove', value: getUuidList(patch.remove) })
+    }
+    if (isPatchArray(patch.replace)) {
+      payload.push({ op: 'replace', value: getMinimalUpdateList(patch.replace) })
+    }
+    if (isPatchArray(patch.add)) {
+      payload.push({ op: 'add', value: patch.add })
+    }
+    if (isPatchArray(patch.merge)) {
+      payload.push({ op: 'merge', value: getUuidList(patch.merge) })
+    }
+    return payload
   }
 
-  function debugPrint(orders, currentBook, newBook, patch, cancelsClone, createsClone) {
-    console.log(JSON.stringify({ orders: orders, currentBook: currentBook, newBook: newBook, patch: patch, cancels: cancelsClone, creates: createsClone }))
+  function getMinimalUpdateList(orders) {
+    return orders.map(order => {
+      return {
+        uuid  : order.uuid,
+        price : order.price
+      }
+    })
+  }
+
+  function isPatchArray(op) {
+    return op && Array.isArray(op) && op.length > 0
+  }
+
+  function getUuidList(items) {
+    return items.map(item => item.uuid ? item.uuid : item)
+  }
+
+  bot.getPatch = function (currentBook, newBook) {
+    var cancels = getCancels(currentBook, newBook)
+    var creates = getCreates(currentBook, newBook)
+    return generatePatch(cancels, creates)
   }
 
   function* mergePositions() {
@@ -273,10 +299,10 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
         targets    = targets.slice(0, 15)
         var merges = []
         targets.forEach(target => {
-          merges.push(target.uuid)
+          // merges.push(target.uuid)
           merges.push(target.oco)
         })
-        yield account.patchOrders(SYMBOL, { merge: merges })
+        yield account.patchOrders([{ op: "merge", value: merges }])
       }
     } catch (e) {
       util.log(e)
