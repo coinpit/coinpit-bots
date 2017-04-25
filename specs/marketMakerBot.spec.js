@@ -89,7 +89,7 @@ describe('marketMakerBot', function () {
     sinon.stub(account, 'getOpenOrders').returns(fixtures.duplicateRemoval.orders)
     sinon.spy(account, 'patchOrders')
     yield* bot.removeDuplicateOrders()
-    var patch = account.patchOrders.getCall(0).args[1]
+    var patch = account.patchOrders.getCall(0).args[0]
     expect(patch).to.be.eql(fixtures.duplicateRemoval.result)
     account.patchOrders.restore()
     account.getOpenOrders.restore()

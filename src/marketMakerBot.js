@@ -240,7 +240,6 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       var patch       = bot.getPatch(currentBook, newBook)
       updateTargets(patch.replace, currentBook.targets, price)
       var patchPayload = getPatchPayload(patch)
-      if (patchPayload.length === 0) return
       yield account.patchOrders(patchPayload)
     } catch (e) {
       util.log(e);

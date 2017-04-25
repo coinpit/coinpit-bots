@@ -97,17 +97,12 @@
         }
       }
     },
-    "result": {
-      "remove": [
-        {
-          "price": 420,
-          "uuid":  "order3"
-        }, {
-          "price": 423,
-          "uuid":  "order6"
-        }
-      ]
-    }
+    "result": [
+      {
+        "op":    "remove",
+        "value": ["order3", "order6"]
+      }
+    ]
   },
   "targetPoints":     {
     "price":  1200,
