@@ -67,13 +67,13 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function* split() {
     var target = getTargetToSplit()
     if (target)
-      yield account.patchOrders([{ op: "split", value: [target.uuid], quantity: 1 }])
+      yield account.patchOrders([{ op: "split", value: [target.oco], quantity: 1 }])
   }
 
   function* restSplit() {
     var target = getTargetToSplit()
     if (target)
-      rest.patch("/order", {}, [{ op: "split", value: [target.uuid], quantity: 1 }])
+      rest.patch("/order", {}, [{ op: "split", value: [target.oco], quantity: 1 }])
   }
 
   function* restCreate() {
@@ -147,7 +147,6 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     var merges = []
     stops[symbol].forEach(stop => {
       merges.push(stop.uuid)
-      merges.push(stop.oco)
     })
     return { symbol: symbol, merge: merges }
   }
