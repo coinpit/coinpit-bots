@@ -148,6 +148,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
     stops[symbol].forEach(stop => {
       merges.push(stop.uuid)
     })
+    merges = merges.slice(0, 19)
     return { symbol: symbol, merge: merges }
   }
 
