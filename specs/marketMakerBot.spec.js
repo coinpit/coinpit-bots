@@ -65,10 +65,6 @@ describe('marketMakerBot', function () {
     account.patchOrders.restore()
   })
 
-  // it('should only use allocated margin to create orders', function*() {
-  //
-  // })
-
   it('should compute premium based on timeToExpiry', function*() {
     var bot = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
     for (var i = 0; i < fixtures.premium.length; i++) {

@@ -7,6 +7,9 @@ var util     = require('util')
 module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   affirm(symbol, "Symbol required to create marketMakerBot")
 
+  var SECOND = 1000
+  var MINUTE = 60 * SECOND
+
   var bot = {}
 
   var baseurl = botParams.baseurl
@@ -81,14 +84,16 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   bot.removeDuplicateOrders = function*() {
     var openOrders = account.getOpenOrders()[SYMBOL]
     if (!openOrders || _.isEmpty(openOrders)) return
-    var ordersToBeRemoved = []
     var ordersByPrice     = {}
-    _.values(openOrders).forEach(order => {
-      if (order.orderType === 'STP' || order.orderType === 'TGT') return
-      if (ordersByPrice[order.price]) return ordersToBeRemoved.push(order.uuid)
+    var ordersToBeRemoved = _.values(openOrders)
+                             .filter(order => order.orderType === 'LMT')
+                             .filter(order => {
+      if(ordersByPrice[order.price]) return true
       ordersByPrice[order.price] = order
     })
-    if (ordersToBeRemoved.length > 0) yield account.patchOrders([{ op: 'remove', value: ordersToBeRemoved }])
+    var patch = bot.getCancelPatch(ordersToBeRemoved)
+    console.log('patch is', patch, ordersToBeRemoved)
+    if (patch) yield account.patchOrders(patch)
   }
 
   var getSatoshiPerQuantity = {
@@ -375,11 +380,27 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
         util.log('isActive: Current instrument for', SYMBOL, 'is', currentInstrument)
         return false
       }
-      return Date.now() <= currentInstrument.expiry
+      var cleanupDuration = currentInstrument.expiryClass === 'fiveMinutes' ? 1 * MINUTE : 5 * MINUTE
+      return Date.now() <= currentInstrument.expiry - cleanupDuration
     } catch (e) {
       util.log("ERROR isActive", e.stack)
       throw e
     }
+  }
+
+  bot.getCancelPatch = function(orders) {
+    affirm(Array.isArray(orders), 'Expecting array of orders to cancel' + JSON.stringify(orders))
+    var limitOrders = orders.filter(order => order.orderType === 'LMT')
+    var deletePatch = limitOrders.map(order => order.uuid)
+    return deletePatch.length ? [{ op: 'remove', value: deletePatch }] : undefined
+  }
+
+  bot.shutdownBot = function*() {
+    var orders = getOrders()
+    var patch  = bot.getCancelPatch(orders)
+    if (patch) yield account.patchOrders(patch)
+    util.log('Shutting down bot for', SYMBOL)
+    return true
   }
 
   var last         = 0
@@ -387,7 +408,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var active = true;
     try {
       active = isActive();
-      if (!active) return util.log('Shutting down bot for', SYMBOL)
+      if (!active) return 
       yield* movePrice()
       yield* mergePositions()
     } catch (e) {

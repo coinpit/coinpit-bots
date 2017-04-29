@@ -73,26 +73,32 @@
       "BTCUSD7F13": {
         "order1": {
           "uuid":  "order1",
+          "orderType": "STP",
           "price": 420
         },
         "order2": {
           "uuid":  "order2",
+          "orderType": "LMT",
           "price": 421
         },
         "order3": {
           "uuid":  "order3",
+          "orderType": "LMT",
           "price": 420
         },
         "order4": {
           "uuid":  "order4",
+          "orderType": "LMT",
           "price": 422
         },
         "order5": {
           "uuid":  "order5",
+          "orderType": "LMT",
           "price": 423
         },
         "order6": {
           "uuid":  "order6",
+          "orderType": "LMT",
           "price": 423
         }
       }
@@ -100,7 +106,7 @@
     "result": [
       {
         "op":    "remove",
-        "value": ["order3", "order6"]
+        "value": ["order6"]
       }
     ]
   },
