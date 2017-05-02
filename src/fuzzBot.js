@@ -211,7 +211,7 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
       .filter(symbol => account.instruments[symbol].expiry > Date.now())
       .map(symbol => {
         var count = { symbol: symbol, size: 0 }
-        Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
+        if(orders[symbol]) Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
         return count
       })
     ordersPerSymbol.sort(function (a, b) {
