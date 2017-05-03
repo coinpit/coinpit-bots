@@ -243,7 +243,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       var currentBook = getCurrentBook(orders)
       var newBook     = createNewBook(price)
       var patch       = bot.getPatch(currentBook, newBook)
-      updateTargets(patch.replace, currentBook.targets, price)
+      // updateTargets(patch.replace, currentBook.targets, price)
       var patchPayload = getPatchPayload(patch)
       yield account.patchOrders(patchPayload)
     } catch (e) {
@@ -363,7 +363,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       price      : mangler.fixed(price),
       orderType  : 'LMT',
       stopPrice  : STP,
-      targetPrice: mangler.fixed(SPREAD * 2 - 0.1, inst.ticksize),
+      targetPrice: 'NONE',//mangler.fixed(SPREAD * 2 - 0.1, inst.ticksize),
       crossMargin: CROSS,
       instrument : SYMBOL
     }
