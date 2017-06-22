@@ -208,10 +208,10 @@ var bot = bluebird.coroutine(function* mmBot(botParams) {
   function sortedOrdersPerSymbol(orders) {
     orders              = orders || account.getOpenOrders()
     var ordersPerSymbol = Object.keys(account.instruments)
-      .filter(symbol => account.instruments[symbol].expiry > Date.now())
+      .filter(symbol => account.instruments[symbol].expiry > Date.now() && account.instruments[symbol].template === 'MBTCUSD')
       .map(symbol => {
         var count = { symbol: symbol, size: 0 }
-        if(orders[symbol]) Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
+        if (orders[symbol]) Object.keys(orders[symbol]).forEach(uuid => count.size += toBeFilled(orders[symbol][uuid]))
         return count
       })
     ordersPerSymbol.sort(function (a, b) {
