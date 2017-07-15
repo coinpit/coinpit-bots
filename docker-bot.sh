@@ -1,6 +1,6 @@
 #!/bin/bash
-export KEY_FILE_DIR=/Users/brr/Documents/keys/testnet/bot
-export KEY_FILE=mzW114gYZGfa49BPm87hfB7zt1QdcRQeCw.json
+export KEY_FILE_DIR=/path/to/keyfiledirecoty
+export KEY_FILE=keyfile.json
 export BOT_NAME="mmbot"
 
 #optional
