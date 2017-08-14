@@ -22,7 +22,7 @@ module.exports = (function () {
     affirm(process.env.TEMPLATE, "Define environment variable TEMPLATE for instrument series")
 
     params.baseurl  = process.env.BASE_URL
-    params.baseurl  = params.baseurl || (wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
+    params.baseurl  = params.baseurl || (params.wallet.address.startsWith("1") ? "https://live.coinpit.io" : "https://live.coinpit.me")
     params.depth    = (process.env.DEPTH || DEFAULT_DEPTH) - 0
     params.stop     = (process.env.STP || DEFAULT_STP) - 0
     params.target   = (process.env.TGT || DEFAULT_TGT) - 0
