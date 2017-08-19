@@ -121,6 +121,15 @@ describe('marketMakerBot', function () {
     expect(result).to.eql(fixtures.createPatch.patch)
   })
 
+  it('should get max buy and sell order count based on exposure', function*() {
+    var bot   = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
+    var result = bot.getMaxOrderCounts({quantity:-50}, 'buy')
+    expect(result).to.eql(fixtures.params.maxQty -50)
+    result = bot.getMaxOrderCounts({quantity:-50}, 'sell')
+    expect(result).to.eql(fixtures.params.maxQty +50)
+
+  })
+
   it.skip("should calculate target price using premium", function*() {
     var timestamp    = Date.parse(fixtures.testDateToday)
     var clock        = sinon.useFakeTimers(timestamp)

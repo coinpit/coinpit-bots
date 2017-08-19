@@ -6,6 +6,7 @@ var util        = require('util')
 var coinpit     = require('coinpit-client')
 var Bot         = require('./bot')
 var CoinpitFeed = require("./coinpitFeed")
+var hedgeInfo   = require("./hedgeInfo")
 
 module.exports = (function* marketMakerGen(params) {
   var gen               = {}
@@ -15,12 +16,31 @@ module.exports = (function* marketMakerGen(params) {
   var seriesInstruments = []
   var currentBots       = {}
   var coinpitFeed
+  var listeners         = {}
 
-  gen.run = function*() {
+  listeners.userMessage = bluebird.coroutine(function* () {
+    var template     = params.template
+    var positions    = account.getPositions()
+    var openPosition = 0
+    var symbols      = Object.keys(positions)
+    for (var i = 0; i < symbols.length; i++) {
+      var symbol     = symbols[i];
+      var instrument = account.getInstruments()[symbol]
+      if (instrument && instrument.template === template) {
+        openPosition += positions[symbol].quantity
+      }
+    }
+    hedgeInfo.setCoinpitPositions(openPosition)
+  })
+
+  gen.userMessage = listeners.userMessage
+
+  gen.run = function* () {
     util.log('BOT GENERATOR STARTING', currentBots)
     yield* gen.createBots()
     gen.setListeners()
-    bluebird.coroutine(function*() {
+    yield gen.userMessage()
+    bluebird.coroutine(function* () {
       while (true) {
         yield bluebird.delay(gen.delayTime)
         yield* gen.createBots()
@@ -29,7 +49,7 @@ module.exports = (function* marketMakerGen(params) {
     })()
   }
 
-  gen.createBots = function*() {
+  gen.createBots = function* () {
     var instruments   = account.getInstruments()
     seriesInstruments = sortByExpiry(instruments, params.template)
     util.log("INSTRUMENTS FROM ACCOUNT: ", Object.keys(instruments).map(symbol => symbol + ":" + instruments[symbol].expiry))
@@ -46,7 +66,7 @@ module.exports = (function* marketMakerGen(params) {
     util.log("CURRENT BOTS AFTER CREATION", Object.keys(currentBots))
   }
 
-  gen.createBot = function*(symbol, params, account, botPercent) {
+  gen.createBot = function* (symbol, params, account, botPercent) {
     if (currentBots[symbol]) {
       return currentBots[symbol].setMarginPercent(botPercent)
     }
@@ -73,6 +93,7 @@ module.exports = (function* marketMakerGen(params) {
   gen.setListeners = function () {
     coinpitFeed  = coinpitFeed || CoinpitFeed(account.loginless.socket)
     var handlers = _.values(currentBots).map(bot => bot.listener)
+    handlers.push(listeners)
     coinpitFeed.setListeners(handlers)
   }
 

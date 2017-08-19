@@ -13,13 +13,20 @@ deployment:
     branch: master
     commands:
       - docker info
-      - docker build -t coinpit/coinpit-bots:2.0.0 .
+      - docker build -t coinpit/coinpit-bots:master .
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push coinpit/coinpit-bots
-  multi-instrument:
-    branch: multi-instrument
+  develop:
+    branch: develop
     commands:
       - docker info
-      - docker build -t coinpit/coinpit-bots:multi-instrument .
+      - docker build -t coinpit/coinpit-bots:develop .
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push coinpit/coinpit-bots
+  testnet:
+    branch: testnet
+    commands:
+      - docker info
+      - docker build -t coinpit/coinpit-bots:testnet .
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push coinpit/coinpit-bots

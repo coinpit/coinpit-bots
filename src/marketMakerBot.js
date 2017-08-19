@@ -1,12 +1,12 @@
-var bluebird = require('bluebird')
-var mangler  = require('mangler')
-var affirm   = require('affirm.js')
-var _        = require('lodash')
-var util     = require('util')
+var bluebird  = require('bluebird')
+var mangler   = require('mangler')
+var affirm    = require('affirm.js')
+var _         = require('lodash')
+var util      = require('util')
+var hedgeInfo = require('./hedgeInfo')
 
 module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   affirm(symbol, "Symbol required to create marketMakerBot")
-
   var SECOND = 1000
   var MINUTE = 60 * SECOND
 
@@ -22,6 +22,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   var STP     = botParams.stop
   var TGT     = botParams.target
   var QTY     = botParams.quantity
+  var MAX_QTY = botParams.maxQty
   var SYMBOL  = bot.symbol = symbol
   var counters    = { trade: 0, band: 0 }
   account.logging = true
@@ -51,7 +52,8 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var satoshiPerQuantity = getSatoshiPerQuantity[inst.type]()
     var max                = Math.floor(availableMargin / (satoshiPerQuantity * QTY * 2))
     var depth              = Math.min(DEPTH, max * STEP)
-    var buySpread          = SPREAD, sellSpread = SPREAD
+    var spread             = getSpread()
+    var buySpread          = spread, sellSpread = spread
     var position           = account.getPositions()[inst.symbol]
 
     if (position) {
@@ -59,15 +61,22 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
       buySpread          = position.quantity > 0 ? mangler.fixed(buySpread + adjustedSpread) : buySpread
       sellSpread         = position.quantity < 0 ? mangler.fixed(sellSpread + adjustedSpread) : sellSpread
     }
-
-    var premium = bot.getPremium(inst.expiry - Date.now())
+    var maxBuyCount  = bot.getMaxOrderCounts(position, 'buy')
+    var maxSellCount = bot.getMaxOrderCounts(position, 'sell')
+    var premium      = bot.getPremium(inst.expiry - Date.now())
+    var buyCount        = 0
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP)) {
       var buy         = newOrder('buy', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
       buys[buy.price] = buy
+      buyCount += QTY
+      if (buyCount >= maxBuyCount) break;
     }
+    var sellCount = 0
     for (var j = mangler.fixed(price + sellSpread); j < mangler.fixed(price + sellSpread + depth); j = mangler.fixed(j + STEP)) {
       var sell          = newOrder('sell', bot.getPremiumPrice(j, premium, inst.ticksize), QTY)
       sells[sell.price] = sell
+      sellCount += QTY
+      if (sellCount >= maxSellCount) break;
     }
     return { buys: buys, sells: sells }
   }
@@ -81,17 +90,22 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     return (timeToExpiry * PREMIUM) / (86400000 * 10000)
   }
 
-  bot.removeDuplicateOrders = function*() {
+  bot.getMaxOrderCounts = function (position, side) {
+    if (!position || !position.quantity) return MAX_QTY
+    return MAX_QTY + (side === 'buy' ? 1 : -1) * position.quantity
+  }
+
+  bot.removeDuplicateOrders = function* () {
     var openOrders = account.getOpenOrders()[SYMBOL]
     if (!openOrders || _.isEmpty(openOrders)) return
     var ordersByPrice     = {}
     var ordersToBeRemoved = _.values(openOrders)
-                             .filter(order => order.orderType === 'LMT')
-                             .filter(order => {
-      if(ordersByPrice[order.price]) return true
-      ordersByPrice[order.price] = order
-    })
-    var patch = bot.getCancelPatch(ordersToBeRemoved)
+      .filter(order => order.orderType === 'LMT')
+      .filter(order => {
+        if (ordersByPrice[order.price]) return true
+        ordersByPrice[order.price] = order
+      })
+    var patch             = bot.getCancelPatch(ordersToBeRemoved)
     console.log('patch is', patch, ordersToBeRemoved)
     if (patch) yield account.patchOrders(patch)
   }
@@ -183,7 +197,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     return { remove: cancels, replace: updates, add: creates }
   }
 
-  listener.orderPatch = bluebird.coroutine(function*(response) {
+  listener.orderPatch = bluebird.coroutine(function* (response) {
     try {
       for (var i = 0; i < response.result.length; i++) {
         var eachResponse = response.result[i];
@@ -200,16 +214,16 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     }
   })
 
-  listener.userMessage = bluebird.coroutine(function*() {
+  listener.userMessage = bluebird.coroutine(function* () {
     jobs.merge = true
   })
 
-  listener.trade = bluebird.coroutine(function*() {
+  listener.trade = bluebird.coroutine(function* () {
     counters.trade++
     jobs.movePrice = true
   })
 
-  listener.priceband = bluebird.coroutine(function*(band) {
+  listener.priceband = bluebird.coroutine(function* (band) {
     counters.band++
     try {
       if (!band) return console.log('bad band ', band)
@@ -222,6 +236,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   })
 
   var jobs = { movePrice: true, merge: true }
+
   // var busy      = false
   function getOrders() {
     var allOrders = account.getOpenOrders()
@@ -239,11 +254,11 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     jobs.movePrice = false
     try {
       yield* bot.removeDuplicateOrders()
-      var orders      = getOrders()
-      var currentBook = getCurrentBook(orders)
-      var newBook     = createNewBook(price)
-      var patch       = bot.getPatch(currentBook, newBook)
-      // updateTargets(patch.replace, currentBook.targets, price)
+      var orders       = getOrders()
+      var currentBook  = getCurrentBook(orders)
+      var newBook      = createNewBook(price)
+      var patch        = bot.getPatch(currentBook, newBook)
+      // updateTargets(patch.replace, currentBook.targets, price, spread)
       var patchPayload = getPatchPayload(patch)
       yield account.patchOrders(patchPayload)
     } catch (e) {
@@ -272,8 +287,8 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   function getMinimalUpdateList(orders) {
     return orders.map(order => {
       return {
-        uuid  : order.uuid,
-        price : order.price
+        uuid : order.uuid,
+        price: order.price
       }
     })
   }
@@ -322,12 +337,12 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     return order.quantity - (order.filled || 0) - (order.cancelled || 0)
   }
 
-  function updateTargets(updates, targets, price) {
-    var step    = Math.min(SPREAD, STEP)
+  function updateTargets(updates, targets, price, spread) {
+    var step    = Math.min(spread, STEP)
     var inst    = instrument(SYMBOL)
     var premium = bot.getPremium(inst.expiry - Date.now())
-    var bid     = bot.getPremiumPrice(price - SPREAD + step, premium, inst.ticksize)
-    var ask     = bot.getPremiumPrice(price + SPREAD - step, premium, inst.ticksize)
+    var bid     = bot.getPremiumPrice(price - spread + step, premium, inst.ticksize)
+    var ask     = bot.getPremiumPrice(price + spread - step, premium, inst.ticksize)
     targets.forEach(order => {
       order.price = order.side === 'buy' ? bid : ask
       updates.push(order)
@@ -388,14 +403,14 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     }
   }
 
-  bot.getCancelPatch = function(orders) {
+  bot.getCancelPatch = function (orders) {
     affirm(Array.isArray(orders), 'Expecting array of orders to cancel' + JSON.stringify(orders))
     var limitOrders = orders.filter(order => order.orderType === 'LMT')
     var deletePatch = limitOrders.map(order => order.uuid)
     return deletePatch.length ? [{ op: 'remove', value: deletePatch }] : undefined
   }
 
-  bot.shutdownBot = function*() {
+  bot.shutdownBot = function* () {
     var orders = getOrders()
     var patch  = bot.getCancelPatch(orders)
     if (patch) yield account.patchOrders(patch)
@@ -404,11 +419,11 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   var last         = 0
-  var moveAndMerge = bluebird.coroutine(function*() {
+  var moveAndMerge = bluebird.coroutine(function* () {
     var active = true;
     try {
       active = isActive();
-      if (!active) return 
+      if (!active) return
       yield* movePrice()
       yield* mergePositions()
     } catch (e) {
@@ -438,15 +453,16 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     if (CROSS) {
       STP = instrument(SYMBOL).crossMarginInitialStop
     }
-    var tick = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
-    affirm(SPREAD >= tick, 'SPREAD ' + SPREAD + ' is less than tick ' + tick)
+    var spread = getSpread()
+    var tick   = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
+    affirm(spread >= tick, 'SPREAD ' + spread + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
     console.log('botParams', JSON.stringify({
                                               'baseurl'      : baseurl,
                                               'SYMBOL'       : SYMBOL,
                                               'MARGINPERCENT': marginPercent,
                                               'DEPTH'        : DEPTH,
-                                              'SPREAD'       : SPREAD,
+                                              'SPREAD'       : spread,
                                               'STEP'         : STEP,
                                               'STP'          : STP,
                                               'TGT'          : TGT,
@@ -465,6 +481,10 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
 
   function instrument(symbol) {
     return account.getInstruments()[symbol]
+  }
+
+  function getSpread() {
+    return hedgeInfo.getBitmexSpread() || SPREAD
   }
 
   yield* init()
