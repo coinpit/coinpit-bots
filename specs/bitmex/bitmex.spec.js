@@ -9,7 +9,6 @@ var bitmex
 
 describe('bitmex', function () {
 
-  this.timeout(10000)
   it('should get path from url', function* () {
     bitmex   = yield require('../../src/bitmex/bitmex')
     var path = bitmex.getPath('https://testnet.bitmex.com/api/v1/orders?key1=value1&key2=val2')
@@ -56,16 +55,6 @@ describe('bitmex', function () {
     if (clock && clock.restore) clock.restore()
   })
 
-  it('socket test', function (done) {
-    var client = socket()
-    client.init({
-                  url       : "https://testnet.bitmex.com/api/v1/",
-                  apiKey    : "N3l3N7M1VoCW_haO30XjhgdJ",
-                  apiSecret : "xoSLABLiLGmI2ZleCvyWYbYhHUD4IgpNBOQHX2PMBrZKlJwd",
-                  instrument: "XBTUSD"
-                })
-
-  })
 })
 
 var emptypromise = bluebird.coroutine(function* () {
