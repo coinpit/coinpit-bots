@@ -50,6 +50,14 @@ describe('bitmex', function () {
 
   })
 
+  it('should get split order with different pegs for traing stops', function* () {
+    bitmex     = yield require('../../src/bitmex/bitmex')
+    var result = bitmex.splitOrderPeg(100, 2000, 10, 1)
+    expect(result).to.eql([{ qty: 100, peg: 10 }])
+    result = bitmex.splitOrderPeg(4100, 2000, 10, 1)
+    expect(result).to.eql([{ qty: 2000, peg: 10 }, { qty: 2000, peg: 11 }, { qty: 100, peg: 12 }])
+  })
+
   afterEach(function () {
     if (rest.post.restore) rest.post.restore()
     if (clock && clock.restore) clock.restore()

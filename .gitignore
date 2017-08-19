@@ -34,3 +34,5 @@ node_modules
 
 .idea
 ignore
+run.ignore.sh
+run.ignore.bat

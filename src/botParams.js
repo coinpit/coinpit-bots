@@ -22,12 +22,12 @@ module.exports = (function () {
   // one buy and one sell order is placed 2% away from index to make sure that there is always some spread is avalable.
   var DEFAULT_COINPIT_LATCH         = 0.02
 
-  var DEFAULT_BITMEX_SYMBOL         = 'XBTUSD'
+  var DEFAULT_BITMEX_SYMBOL                  = 'XBTUSD'
 // places a trailing stop order with peg. if this value is 0, a market order will be placed.
-  var DEFAULT_BITMEX_TRAILING_PEG   = 10
-  var DEFAULT_BITMEX_HEDGE_INTERVAL = 2000  // in seconds
-
-  var DEFAULT_HEDGE = true
+  var DEFAULT_BITMEX_TRAILING_PEG            = 10
+  var DEFAULT_BITMEX_HEDGE_INTERVAL          = 2000
+  var DEFAULT_BITMEX_MAX_INDIVIDUAL_POSITION = 20
+  var DEFAULT_BITMEX_PEG_INTERVAL            = 1
 
   botParams.read = function (walletFileName, bitmex) {
     var params    = {}
@@ -60,11 +60,13 @@ module.exports = (function () {
       params.bitmex.url     = isLive ? "https://www.bitmex.com/api/v1/" : "https://testnet.bitmex.com/api/v1/"
       params.bitmex.testnet = !isLive
 
-      params.bitmex.qtyForSpread       = params.bitmex.qtyForSpread || DEFAULT_BITMEX_QTY_FOR_SPREAD
-      params.bitmex.coinpitBitmexRatio = params.bitmex.coinpitBitmexRatio || DEFAULT_COINPIT_BITMEX_RATIO
-      params.bitmex.instrument         = params.bitmex.instrument || DEFAULT_BITMEX_SYMBOL
-      params.bitmex.trailingPeg        = params.bitmex.trailingPeg === undefined ? DEFAULT_BITMEX_TRAILING_PEG : params.bitmex.trailingPeg
-      params.bitmex.hedgeInterval      = params.bitmex.hedgeInterval || DEFAULT_BITMEX_HEDGE_INTERVAL
+      params.bitmex.qtyForSpread          = (process.env.BITMEX_QTY_FOR_SPREAD || DEFAULT_BITMEX_QTY_FOR_SPREAD) - 0
+      params.bitmex.coinpitBitmexRatio    = (process.env.BITMEX_COINPIT_BITMEX_RATIO || DEFAULT_COINPIT_BITMEX_RATIO) - 0
+      params.bitmex.instrument            = process.env.BITMEX_INSTRUMENT || DEFAULT_BITMEX_SYMBOL
+      params.bitmex.trailingPeg           = (process.env.BITMEX_TRAILING_PEG || DEFAULT_BITMEX_TRAILING_PEG) - 0
+      params.bitmex.hedgeInterval         = (process.env.BITMEX_HEDGE_INTERVAL || DEFAULT_BITMEX_HEDGE_INTERVAL) - 0
+      params.bitmex.maxIndividualPosition = (process.env.BITMEX_MAX_INDIVIDUAL_POSITION || DEFAULT_BITMEX_MAX_INDIVIDUAL_POSITION) - 0
+      params.bitmex.pegInterval           = (process.env.BITMEX_PEG_INTERVAL || DEFAULT_BITMEX_PEG_INTERVAL) - 0
 
     }
     return params

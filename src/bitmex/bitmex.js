@@ -47,7 +47,24 @@ module.exports = bluebird.coroutine(function* () {
     var payload = !offset ? bitmex.getMarket(quantity, side) : bitmex.getTrailingStop(offset, quantity, side)
     var uri     = bitmex.params.url + endpoint
     var headers = bitmex.getHeaders(uri, "POST", payload)
-    return rest.post(uri, headers, payload)
+    return yield rest.post(uri, headers, payload)
+  }
+
+  bitmex.placeBulk = function* (splits, side) {
+    affirm(splits, "Quantity splits undefined")
+    affirm(side === "Buy" || side === "Sell", "Valid sides ar Buy or Sell")
+    var endpoint = "order/bulk"
+    var orders   = []
+    for (var i = 0; i < splits.length; i++) {
+      var tupple = splits[i];
+      var peg    = tupple.peg
+      if ((side === 'Sell' && peg > 0) || (side === 'Buy' && peg < 0)) peg = peg * -1
+      var order = bitmex.getTrailingStop(peg, tupple.qty, side)
+      orders.push(order)
+    }
+    var uri     = bitmex.params.url + endpoint
+    var headers = bitmex.getHeaders(uri, "POST", {orders:orders})
+    return yield rest.post(uri, headers, {orders:orders})
   }
 
   bitmex.cancelAllOrders = function* () {
@@ -115,7 +132,14 @@ module.exports = bluebird.coroutine(function* () {
       var orders = socket.getOrders()
       if (orders.length > 0) yield* bitmex.cancelAllOrders()
       var side = hedgeCount > 0 ? 'Sell' : 'Buy'
-      yield* bitmex.placeOrder(Math.abs(hedgeCount), side, bitmex.params.trailingPeg)
+      var qty  = Math.abs(hedgeCount)
+      if (bitmex.params.trailingPeg === 0) {
+        qty = Math.min(qty, bitmex.params.maxIndividualPosition)
+        yield* bitmex.placeOrder(qty, side, bitmex.params.trailingPeg)
+      } else {
+        var splits = bitmex.splitOrderPeg(qty, bitmex.params.maxIndividualPosition, bitmex.params.trailingPeg, bitmex.params.pegInterval)
+        yield* bitmex.placeBulk(splits, side)
+      }
     } catch (e) {
       console.log(e)
     } finally {
@@ -123,12 +147,23 @@ module.exports = bluebird.coroutine(function* () {
     }
   })
 
+  bitmex.splitOrderPeg = function (hedgeQty, maxIndividualQty, peg, increment) {
+    var split = []
+    while (hedgeQty > 0) {
+      var qty = Math.min(hedgeQty, maxIndividualQty)
+      split.push({ qty: qty, peg: peg })
+      hedgeQty -= qty
+      peg += increment
+    }
+    return split
+  }
+
   bitmex.alreadyHedged = function (hedgeCount) {
     var hedged = 0
     var orders = socket.getOrders()
     for (var i = 0; i < orders.length; i++) {
       var order = orders[i];
-      hedged    += order.leavesQty * (order['side'] === 'Buy' ? -1 : 1)
+      hedged += order.leavesQty * (order['side'] === 'Buy' ? -1 : 1)
     }
     return hedgeCount === hedged
   }
