@@ -40,7 +40,8 @@
     "cross":    "true",
     "premium":  6,
     "ins":      "BTCUSD",
-    "bot":      "marketMakerBot"
+    "bot":      "marketMakerBot",
+    "maxQty": 100
   },
   "marginPercent":    90,
   "instruments":      {

@@ -69,6 +69,7 @@ describe('marketMakerGen', function () {
     var clock       = sinon.useFakeTimers(timestamp)
     var mmGen       = yield* marketMakerGen(fixtures.params)
     var unpromoted, promoted
+    sinon.stub(mmGen, 'userMessage', empty)
     mmGen.delayTime = 60 * 60 * 1000
     sinon.stub(mmGen, 'setListeners', function(){})
     yield* mmGen.run()
@@ -80,12 +81,14 @@ describe('marketMakerGen', function () {
     expect(promoted).to.equal(unpromoted)
     clock.restore()
     mmGen.setListeners.restore()
+    mmGen.userMessage.restore()
   })
 
   it('should allocate 60%/40% availableMargin to near/far expiry bots', function*() {
     var timestamp    = Date.parse(fixtures.testDateToday)
     var clock        = sinon.useFakeTimers(timestamp)
     var mmGen        = yield* marketMakerGen(fixtures.params)
+    sinon.stub(mmGen, 'userMessage', empty)
     sinon.stub(mmGen, 'setListeners', function(){})
     var MAJOR_MARGIN = 60
     var MINOR_MARGIN = 40
@@ -98,6 +101,9 @@ describe('marketMakerGen', function () {
     expect(mmGen.farExpiryBot().getMarginPercent()).to.be(MINOR_MARGIN)
     clock.restore()
     mmGen.setListeners.restore()
+    mmGen.userMessage.restore()
   })
 
 })
+
+var empty = bluebird.coroutine(function*(){})
