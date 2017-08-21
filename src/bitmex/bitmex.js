@@ -1,18 +1,10 @@
 var bluebird  = require('bluebird')
-var request   = require('request')
+var rest      = require('../request-promise')
 var crypto    = require('crypto')
 var affirm    = require('affirm.js')
 var URL       = require('url')
 var Socket    = require('./socket')
 var hedgeInfo = require('../hedgeInfo')
-
-var rest = {
-  get    : bluebird.promisify(request.get),
-  post   : bluebird.promisify(request.post),
-  del    : bluebird.promisify(request.del),
-  put    : bluebird.promisify(request.put),
-  options: bluebird.promisify(request.options),
-}
 
 module.exports = bluebird.coroutine(function* () {
   var bitmex    = {}
@@ -58,7 +50,7 @@ module.exports = bluebird.coroutine(function* () {
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "POST", payload)
     var response = yield rest.post({ uri: uri, headers: headers, json: payload })
-    setRateLimit(response.headers)
+    bitmex.setRateLimit(response.headers)
     return response
   }
 
@@ -77,7 +69,7 @@ module.exports = bluebird.coroutine(function* () {
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "POST", { orders: orders })
     var response = yield rest.post({ uri: uri, headers: headers, json: { orders: orders } })
-    setRateLimit(response.headers)
+    bitmex.setRateLimit(response.headers)
     return response
   }
 
@@ -86,7 +78,7 @@ module.exports = bluebird.coroutine(function* () {
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "DELETE")
     var response = yield rest.del({ uri: uri, headers: headers })
-    setRateLimit(response.headers)
+    bitmex.setRateLimit(response.headers)
   }
 
   bitmex.getMarket = function (quantity, side) {
@@ -138,7 +130,7 @@ module.exports = bluebird.coroutine(function* () {
 
   bitmex.startHedge = bluebird.coroutine(function* () {
     try {
-      if (isRateLimitExceeded()) return
+      if (bitmex.isRateLimitExceeded()) return
       var coinpitPositions = hedgeInfo.getCoinpitPositions()
       if (coinpitPositions === undefined) return
       var on_bitmex  = socket.getPositions()
@@ -183,7 +175,7 @@ module.exports = bluebird.coroutine(function* () {
     return hedgeCount === hedged
   }
 
-  function setRateLimit(headers) {
+  bitmex.setRateLimit = function (headers) {
     rateLimit = {
       time : (headers['x-ratelimit-reset'] - 0) * 1000,
       count: headers['x-ratelimit-remaining'] - 0
@@ -191,7 +183,7 @@ module.exports = bluebird.coroutine(function* () {
     console.log("###### ratelimit", JSON.stringify(rateLimit))
   }
 
-  function isRateLimitExceeded() {
+  bitmex.isRateLimitExceeded = function () {
     if (rateLimit.time === undefined) return false
     if (Date.now() > rateLimit.time) return false
     if (rateLimit.count > 5) return false
