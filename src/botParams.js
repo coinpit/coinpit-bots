@@ -36,7 +36,7 @@ module.exports = (function () {
     affirm(process.env.TEMPLATE, "Define environment variable TEMPLATE for instrument series")
 
     params.baseurl  = process.env.BASE_URL
-    var isLive      = params.wallet.address.startsWith("1")
+    var isLive      = (params.wallet.address || params.wallet.userid).startsWith("1")
     params.baseurl  = params.baseurl || (isLive ? "https://live.coinpit.io" : "https://live.coinpit.me")
     params.depth    = (process.env.DEPTH || DEFAULT_DEPTH) - 0
     params.stop     = (process.env.STP || DEFAULT_STP) - 0

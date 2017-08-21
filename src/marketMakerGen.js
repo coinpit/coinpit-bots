@@ -11,7 +11,12 @@ var hedgeInfo   = require("./hedgeInfo")
 module.exports = (function* marketMakerGen(params) {
   var gen               = {}
   gen.delayTime         = 1 * 60 * 1000
-  var account           = yield coinpit.getAccount(params.wallet.privateKey, params.baseurl)
+  var account
+  if(params.wallet.privateKey) {
+    account = yield coinpit.getAccount(params.wallet.privateKey, params.baseurl)
+  } else {
+    account = yield coinpit.getAccount(params.wallet, params.baseurl)
+  }
   account.logging       = true
   var seriesInstruments = []
   var currentBots       = {}
