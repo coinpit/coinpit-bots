@@ -29,10 +29,12 @@
     "affirm.js": "^1.0.0",
     "bitmex-realtime-api": "^0.2.0",
     "bluebird": "^3.4.0",
-    "coinpit-client": "^5.0.1",
+    "coinpit-client": "^5.0.2",
+    "extend": "^3.0.1",
     "lodash": "^4.17.4",
     "mangler": "^1.0.4",
     "pusher-client": "^1.1.0",
+    "request": "^2.81.0",
     "rest.js": "^0.2.1",
     "sequencer-js": "^0.0.2",
     "socket.io-client": "^1.4.6"

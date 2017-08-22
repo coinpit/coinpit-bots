@@ -1,5 +1,5 @@
 var bluebird  = require('bluebird')
-var rest      = require('rest.js')
+var rest      = require('../request-promise')
 var crypto    = require('crypto')
 var affirm    = require('affirm.js')
 var URL       = require('url')
@@ -7,7 +7,9 @@ var Socket    = require('./socket')
 var hedgeInfo = require('../hedgeInfo')
 
 module.exports = bluebird.coroutine(function* () {
-  var bitmex  = {}
+  var bitmex    = {}
+  var rateLimit = {}
+
   var socket, spread
   bitmex.init = function (params) {
     affirm(params && params.url && params.instrument && params.apiKey && params.apiSecret, 'Missing params for bitmex. { url:"", instrument:"", apiKey:"", apiSecret:""}')
@@ -44,10 +46,12 @@ module.exports = bluebird.coroutine(function* () {
     affirm(side === "Buy" || side === "Sell", "Valid sides ar Buy or Sell")
     var endpoint = "order"
     if ((side === 'Sell' && offset > 0) || (side === 'Buy' && offset < 0)) offset = offset * -1
-    var payload = !offset ? bitmex.getMarket(quantity, side) : bitmex.getTrailingStop(offset, quantity, side)
-    var uri     = bitmex.params.url + endpoint
-    var headers = bitmex.getHeaders(uri, "POST", payload)
-    return yield rest.post(uri, headers, payload)
+    var payload  = !offset ? bitmex.getMarket(quantity, side) : bitmex.getTrailingStop(offset, quantity, side)
+    var uri      = bitmex.params.url + endpoint
+    var headers  = bitmex.getHeaders(uri, "POST", payload)
+    var response = yield rest.post({ uri: uri, headers: headers, json: payload })
+    bitmex.setRateLimit(response)
+    return response
   }
 
   bitmex.placeBulk = function* (splits, side) {
@@ -62,17 +66,19 @@ module.exports = bluebird.coroutine(function* () {
       var order = bitmex.getTrailingStop(peg, tupple.qty, side)
       orders.push(order)
     }
-    var uri     = bitmex.params.url + endpoint
-    var headers = bitmex.getHeaders(uri, "POST", {orders:orders})
-    return yield rest.post(uri, headers, {orders:orders})
+    var uri      = bitmex.params.url + endpoint
+    var headers  = bitmex.getHeaders(uri, "POST", { orders: orders })
+    var response = yield rest.post({ uri: uri, headers: headers, json: { orders: orders } })
+    bitmex.setRateLimit(response)
+    return response
   }
 
   bitmex.cancelAllOrders = function* () {
     var endpoint = "order/all"
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "DELETE")
-    var response = yield rest.del(uri, headers)
-    console.log(response)
+    var response = yield rest.del({ uri: uri, headers: headers })
+    bitmex.setRateLimit(response)
   }
 
   bitmex.getMarket = function (quantity, side) {
@@ -124,6 +130,7 @@ module.exports = bluebird.coroutine(function* () {
 
   bitmex.startHedge = bluebird.coroutine(function* () {
     try {
+      if (bitmex.isRateLimitExceeded()) return
       var coinpitPositions = hedgeInfo.getCoinpitPositions()
       if (coinpitPositions === undefined) return
       var on_bitmex  = socket.getPositions()
@@ -166,6 +173,32 @@ module.exports = bluebird.coroutine(function* () {
       hedged += order.leavesQty * (order['side'] === 'Buy' ? -1 : 1)
     }
     return hedgeCount === hedged
+  }
+
+  bitmex.setRateLimit = function (response) {
+    if(response.statusCode >= 400) {
+      console.log("###### error response from bitmex.", response)
+    }
+    var headers = response.headers
+    var time
+    if (response.statusCode === 429) {
+      time = Date.now() + (headers['Retry-After'] - 0) * 1000
+    } else {
+      time = (headers['x-ratelimit-reset'] - 0) * 1000
+    }
+    rateLimit = {
+      time : time,
+      count: headers['x-ratelimit-remaining'] - 0
+    }
+    console.log("###### ratelimit", JSON.stringify(rateLimit))
+  }
+
+  bitmex.isRateLimitExceeded = function () {
+    if (rateLimit.time === undefined) return false
+    if (Date.now() > rateLimit.time) return false
+    if (rateLimit.count > 5) return false
+    console.log('Bitmex Rate limit exceeded. waiting to hedge until', new Date(rateLimit.time), " Bitmex ratelimit response:", JSON.stringify(rateLimit))
+    return true
   }
 
   return bitmex
