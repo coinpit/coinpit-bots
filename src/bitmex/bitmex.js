@@ -140,6 +140,7 @@ module.exports = bluebird.coroutine(function* () {
       if (orders.length > 0) yield* bitmex.cancelAllOrders()
       var side = hedgeCount > 0 ? 'Sell' : 'Buy'
       var qty  = Math.abs(hedgeCount)
+      if(qty === 0) return
       if (bitmex.params.trailingPeg === 0) {
         qty = Math.min(qty, bitmex.params.maxIndividualPosition)
         yield* bitmex.placeOrder(qty, side, bitmex.params.trailingPeg)
