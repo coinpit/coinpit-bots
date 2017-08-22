@@ -50,7 +50,7 @@ module.exports = bluebird.coroutine(function* () {
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "POST", payload)
     var response = yield rest.post({ uri: uri, headers: headers, json: payload })
-    bitmex.setRateLimit(response.headers)
+    bitmex.setRateLimit(response)
     return response
   }
 
@@ -69,7 +69,7 @@ module.exports = bluebird.coroutine(function* () {
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "POST", { orders: orders })
     var response = yield rest.post({ uri: uri, headers: headers, json: { orders: orders } })
-    bitmex.setRateLimit(response.headers)
+    bitmex.setRateLimit(response)
     return response
   }
 
@@ -78,7 +78,7 @@ module.exports = bluebird.coroutine(function* () {
     var uri      = bitmex.params.url + endpoint
     var headers  = bitmex.getHeaders(uri, "DELETE")
     var response = yield rest.del({ uri: uri, headers: headers })
-    bitmex.setRateLimit(response.headers)
+    bitmex.setRateLimit(response)
   }
 
   bitmex.getMarket = function (quantity, side) {
@@ -175,9 +175,19 @@ module.exports = bluebird.coroutine(function* () {
     return hedgeCount === hedged
   }
 
-  bitmex.setRateLimit = function (headers) {
+  bitmex.setRateLimit = function (response) {
+    if(response.statusCode >= 400) {
+      console.log("###### error response from bitmex.", response)
+    }
+    var headers = response.headers
+    var time
+    if (response.statusCode === 429) {
+      time = Date.now() + (headers['Retry-After'] - 0) * 1000
+    } else {
+      time = (headers['x-ratelimit-reset'] - 0) * 1000
+    }
     rateLimit = {
-      time : (headers['x-ratelimit-reset'] - 0) * 1000,
+      time : time,
       count: headers['x-ratelimit-remaining'] - 0
     }
     console.log("###### ratelimit", JSON.stringify(rateLimit))
