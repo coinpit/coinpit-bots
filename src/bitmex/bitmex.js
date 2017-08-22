@@ -181,8 +181,8 @@ module.exports = bluebird.coroutine(function* () {
     }
     var headers = response.headers
     var time
-    if (response.statusCode === 429) {
-      time = Date.now() + (headers['Retry-After'] - 0) * 1000
+    if (response.statusCode === 429 && headers['retry-after']) {
+      time = Date.now() + (headers['retry-after'] - 0) * 1000
     } else {
       time = (headers['x-ratelimit-reset'] - 0) * 1000
     }
