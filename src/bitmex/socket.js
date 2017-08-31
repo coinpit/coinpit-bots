@@ -1,4 +1,4 @@
-var BitMEXClient = require('bitmex-realtime-api-test')
+var BitMEXClient = require('bitmex-realtime-api')
 var affirm       = require('affirm.js')
 
 module.exports = function (handlers) {
