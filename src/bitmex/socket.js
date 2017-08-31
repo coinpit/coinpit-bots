@@ -1,13 +1,13 @@
-var BitMEXClient = require('bitmex-realtime-api')
+var BitMEXClient = require('bitmex-realtime-api-test')
 var affirm       = require('affirm.js')
 
 module.exports = function (handlers) {
-  var socket = {}
+  var socket                    = {}
   var client, orderBook, orders = [], positions
-  socket.init = function (params) {
+  socket.init                   = function (params) {
     affirm(params && params.instrument && params.apiKey && params.apiSecret, 'Invalid params')
     socket.params = params
-    client        = new BitMEXClient({ testnet: params.testnet, apiKeyID: params.apiKey, apiKeySecret: params.apiSecret })
+    client = new BitMEXClient({ testnet: params.testnet, apiKeyID: params.apiKey, apiKeySecret: params.apiSecret })
     subscribe(params.instrument)
   }
 
@@ -49,7 +49,7 @@ module.exports = function (handlers) {
     return positions ? positions.currentQty : 0;
   }
 
-  socket.getOrders = function(){
+  socket.getOrders = function () {
     return orders || []
   }
 
