@@ -112,7 +112,8 @@ module.exports = bluebird.coroutine(function* () {
     if (!orderBook || !orderBook.bids || !orderBook.asks) return
     var buyPrice  = bitmex.getPriceFor(bitmex.params.qtyForSpread, orderBook['bids'])
     var sellPrice = bitmex.getPriceFor(bitmex.params.qtyForSpread, orderBook['asks'])
-    spread        = (sellPrice - buyPrice) / 2
+    spread        = ((sellPrice - buyPrice) + bitmex.params.commissionAdjust) / 2
+    hedgeInfo.setBitmexSpread(spread)
   }
 
   bitmex.getPriceFor = function (quantity, prices) {
@@ -201,7 +202,7 @@ module.exports = bluebird.coroutine(function* () {
   }
 
   bitmex.isRateLimitExceeded = function () {
-    if(errorCounter > 3) process.exit(1)
+    if (errorCounter > 3) process.exit(1)
     if (rateLimit.time === undefined) return false
     if (Date.now() > rateLimit.time) return false
     if (rateLimit.count > 5) return false
