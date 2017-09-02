@@ -5,6 +5,7 @@ var affirm    = require('affirm.js')
 var URL       = require('url')
 var Socket    = require('./socket')
 var hedgeInfo = require('../hedgeInfo')
+var debug     = require('debug')('coinpit:bitmex')
 
 module.exports = bluebird.coroutine(function* () {
   var bitmex       = {}
@@ -103,7 +104,7 @@ module.exports = bluebird.coroutine(function* () {
   }
 
   bitmex.getSpread = function () {
-    console.log("############# spread", spread)
+
     return spread
   }
 
@@ -113,6 +114,7 @@ module.exports = bluebird.coroutine(function* () {
     var buyPrice  = bitmex.getPriceFor(bitmex.params.qtyForSpread, orderBook['bids'])
     var sellPrice = bitmex.getPriceFor(bitmex.params.qtyForSpread, orderBook['asks'])
     spread        = ((sellPrice - buyPrice) + bitmex.params.commissionAdjust) / 2
+    debug("spread ", (sellPrice - buyPrice) , bitmex.params.commissionAdjust, spread)
     hedgeInfo.setBitmexSpread(spread)
   }
 
