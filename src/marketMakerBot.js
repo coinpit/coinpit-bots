@@ -95,7 +95,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
 
   bot.getMaxOrderCounts = function (position, side) {
     if (!position || !position.quantity) return MAX_QTY
-    return MAX_QTY + (side === 'buy' ? 1 : -1) * position.quantity
+    return MAX_QTY + (side === 'sell' ? 1 : -1) * position.quantity
   }
 
   bot.removeDuplicateOrders = function* () {
