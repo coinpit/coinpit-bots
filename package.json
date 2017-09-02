@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "affirm.js": "^1.0.0",
-    "bitmex-realtime-api": "^0.2.1",
+    "bitmex-realtime-api": "^0.2.2",
     "bluebird": "^3.4.0",
     "coinpit-client": "^5.0.2",
     "extend": "^3.0.1",
