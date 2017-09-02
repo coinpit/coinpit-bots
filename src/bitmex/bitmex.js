@@ -5,13 +5,14 @@ var affirm    = require('affirm.js')
 var URL       = require('url')
 var Socket    = require('./socket')
 var hedgeInfo = require('../hedgeInfo')
+var debug     = require('debug')('coinpit:bitmex')
 
 module.exports = bluebird.coroutine(function* () {
-  var bitmex    = {}
-  var rateLimit = {}
-
+  var bitmex       = {}
+  var rateLimit    = {}
+  var errorCounter = 0
   var socket, spread
-  bitmex.init = function (params) {
+  bitmex.init      = function (params) {
     affirm(params && params.url && params.instrument && params.apiKey && params.apiSecret, 'Missing params for bitmex. { url:"", instrument:"", apiKey:"", apiSecret:""}')
     bitmex.params = params
     socket        = Socket({ orderBook: bitmex.onOrderBookChange })
@@ -103,7 +104,7 @@ module.exports = bluebird.coroutine(function* () {
   }
 
   bitmex.getSpread = function () {
-    console.log("############# spread", spread)
+
     return spread
   }
 
@@ -112,7 +113,9 @@ module.exports = bluebird.coroutine(function* () {
     if (!orderBook || !orderBook.bids || !orderBook.asks) return
     var buyPrice  = bitmex.getPriceFor(bitmex.params.qtyForSpread, orderBook['bids'])
     var sellPrice = bitmex.getPriceFor(bitmex.params.qtyForSpread, orderBook['asks'])
-    spread        = (sellPrice - buyPrice) / 2
+    spread        = ((sellPrice - buyPrice) + bitmex.params.commissionAdjust) / 2
+    debug("spread ", (sellPrice - buyPrice) , bitmex.params.commissionAdjust, spread)
+    hedgeInfo.setBitmexSpread(spread)
   }
 
   bitmex.getPriceFor = function (quantity, prices) {
@@ -140,7 +143,7 @@ module.exports = bluebird.coroutine(function* () {
       if (orders.length > 0) yield* bitmex.cancelAllOrders()
       var side = hedgeCount > 0 ? 'Sell' : 'Buy'
       var qty  = Math.abs(hedgeCount)
-      if(qty === 0) return
+      if (qty === 0) return
       if (bitmex.params.trailingPeg === 0) {
         qty = Math.min(qty, bitmex.params.maxIndividualPosition)
         yield* bitmex.placeOrder(qty, side, bitmex.params.trailingPeg)
@@ -177,8 +180,14 @@ module.exports = bluebird.coroutine(function* () {
   }
 
   bitmex.setRateLimit = function (response) {
-    if(response.statusCode >= 400) {
-      console.log("###### error response from bitmex.", response)
+    if (response.statusCode >= 400) {
+      errorCounter++
+      console.log("###### error response from bitmex.", JSON.stringify(
+        {
+          counter: errorCounter, response: { statusCode: response.statusCode, body: response.body, headers: response.headers },
+          request                        : { header: response.request.headers, body: response.request.body, path: response.request.path }
+        })
+      )
     }
     var headers = response.headers
     var time
@@ -195,6 +204,7 @@ module.exports = bluebird.coroutine(function* () {
   }
 
   bitmex.isRateLimitExceeded = function () {
+    if (errorCounter > 3) process.exit(1)
     if (rateLimit.time === undefined) return false
     if (Date.now() > rateLimit.time) return false
     if (rateLimit.count > 5) return false

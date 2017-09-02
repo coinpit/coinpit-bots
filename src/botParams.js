@@ -17,10 +17,12 @@ module.exports = (function () {
   var DEFAULT_MAX_QTY  = 1000
 
   // market maker on coinpit will maintain number of contracts on buy and sell side
-  var DEFAULT_BITMEX_QTY_FOR_SPREAD = 50000
-  var DEFAULT_COINPIT_BITMEX_RATIO  = 100
+  var DEFAULT_BITMEX_QTY_FOR_SPREAD           = 50000
+  //commission adjustment to price from bitmex in points
+  var DEFAULT_BITMEX_COMMISSION_SPREAD_ADJUST = 1
+  var DEFAULT_COINPIT_BITMEX_RATIO            = 100
   // one buy and one sell order is placed 2% away from index to make sure that there is always some spread is avalable.
-  var DEFAULT_COINPIT_LATCH         = 0.02
+  var DEFAULT_COINPIT_LATCH                   = 0.02
 
   var DEFAULT_BITMEX_SYMBOL                  = 'XBTUSD'
 // places a trailing stop order with peg. if this value is 0, a market order will be placed.
@@ -60,6 +62,7 @@ module.exports = (function () {
       params.bitmex.url     = isLive ? "https://www.bitmex.com/api/v1/" : "https://testnet.bitmex.com/api/v1/"
       params.bitmex.testnet = !isLive
 
+      params.bitmex.commissionAdjust      = (process.env.BITMEX_COMMISSION_SPREAD_ADJUST || DEFAULT_BITMEX_COMMISSION_SPREAD_ADJUST) - 0
       params.bitmex.qtyForSpread          = (process.env.BITMEX_QTY_FOR_SPREAD || DEFAULT_BITMEX_QTY_FOR_SPREAD) - 0
       params.bitmex.coinpitBitmexRatio    = (process.env.BITMEX_COINPIT_BITMEX_RATIO || DEFAULT_COINPIT_BITMEX_RATIO) - 0
       params.bitmex.instrument            = process.env.BITMEX_INSTRUMENT || DEFAULT_BITMEX_SYMBOL

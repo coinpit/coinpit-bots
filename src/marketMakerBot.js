@@ -4,8 +4,11 @@ var affirm    = require('affirm.js')
 var _         = require('lodash')
 var util      = require('util')
 var hedgeInfo = require('./hedgeInfo')
+var Debug     = require('debug')
 
 module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
+  var debug = Debug('coinpit:mmbot:'+symbol)
+
   affirm(symbol, "Symbol required to create marketMakerBot")
   var SECOND = 1000
   var MINUTE = 60 * SECOND
@@ -46,7 +49,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
 
     var buys            = {}, sells = {}
     var availableMargin = calculateAvailableMargin()
-    console.log('availableMargin', availableMargin)
+    debug('availableMargin', availableMargin)
     if (availableMargin <= 0) return { buys: buys, sells: sells }
     var inst               = instrument(SYMBOL)
     var satoshiPerQuantity = getSatoshiPerQuantity[inst.type]()
@@ -64,7 +67,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var maxBuyCount  = bot.getMaxOrderCounts(position, 'buy')
     var maxSellCount = bot.getMaxOrderCounts(position, 'sell')
     var premium      = bot.getPremium(inst.expiry - Date.now())
-    var buyCount        = 0
+    var buyCount     = 0
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP)) {
       var buy         = newOrder('buy', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
       buys[buy.price] = buy
@@ -106,7 +109,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
         ordersByPrice[order.price] = order
       })
     var patch             = bot.getCancelPatch(ordersToBeRemoved)
-    console.log('patch is', patch, ordersToBeRemoved)
+    debug('patch is', patch, ordersToBeRemoved)
     if (patch) yield account.patchOrders(patch)
   }
 
@@ -226,7 +229,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   listener.priceband = bluebird.coroutine(function* (band) {
     counters.band++
     try {
-      if (!band) return console.log('bad band ', band)
+      if (!band) return debug('bad band ', band)
       currentBand    = band[SYMBOL]
       jobs.movePrice = true
     } catch (e) {
@@ -249,7 +252,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var price = currentBand.price
     if (isNaN(price)) {
       jobs.movePrice = false
-      return console.log('invalid price', price)
+      return debug('invalid price', price)
     }
     jobs.movePrice = false
     try {
@@ -457,7 +460,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var tick   = mangler.fixed(1 / instrument(SYMBOL).ticksperpoint)
     affirm(spread >= tick, 'SPREAD ' + spread + ' is less than tick ' + tick)
     affirm(STEP >= tick, 'STEP ' + STEP + ' is less than tick ' + tick)
-    console.log('botParams', JSON.stringify({
+    debug('botParams', JSON.stringify({
                                               'baseurl'      : baseurl,
                                               'SYMBOL'       : SYMBOL,
                                               'MARGINPERCENT': marginPercent,
@@ -472,7 +475,7 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
                                               PREMIUM        : PREMIUM
                                             }, null, 2))
     var info  = yield account.loginless.rest.get('/all/info')
-    // console.log('current price', info)
+    // debug('current price', info)
     var price = info[SYMBOL].indexPrice
 
     currentBand = { price: price }
@@ -484,7 +487,9 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
   }
 
   function getSpread() {
-    return hedgeInfo.getBitmexSpread() || SPREAD
+    var spread = hedgeInfo.getBitmexSpread() || SPREAD
+    debug('spread', spread)
+    return spread
   }
 
   yield* init()
