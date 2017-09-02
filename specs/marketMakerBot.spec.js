@@ -47,7 +47,7 @@ describe('marketMakerBot', function () {
           }
         }
 
-  it('should stop creating orders on expiration', function*() {
+  it('should stop creating orders on expiration', function* () {
     var timestamp = Date.parse(fixtures.testDateToday)
     var clock     = sinon.useFakeTimers(timestamp)
 
@@ -65,14 +65,14 @@ describe('marketMakerBot', function () {
     account.patchOrders.restore()
   })
 
-  it('should compute premium based on timeToExpiry', function*() {
+  it('should compute premium based on timeToExpiry', function* () {
     var bot = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
     for (var i = 0; i < fixtures.premium.length; i++) {
       expect(bot.getPremium(fixtures.premium[i].expiry)).to.be(fixtures.premium[i].premium)
     }
   })
 
-  it('should compute premium price based on time to expiry', function*() {
+  it('should compute premium price based on time to expiry', function* () {
     var bot = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
     for (var i = 0; i < fixtures.premiumPrice.length; i++) {
       var test = fixtures.premiumPrice[i]
@@ -80,7 +80,7 @@ describe('marketMakerBot', function () {
     }
   })
 
-  it('should remove all orders except one if multiple orders are at same price', function*() {
+  it('should remove all orders except one if multiple orders are at same price', function* () {
     var bot = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
     sinon.stub(account, 'getOpenOrders').returns(fixtures.duplicateRemoval.orders)
     sinon.spy(account, 'patchOrders')
@@ -91,11 +91,11 @@ describe('marketMakerBot', function () {
     account.getOpenOrders.restore()
   })
 
-  it('should create sets of buys and sells for collar strategy', function*() {
+  it('should create sets of buys and sells for collar strategy', function* () {
     var timestamp = Date.parse(fixtures.testDateToday)
     var clock     = sinon.useFakeTimers(timestamp)
-    var bot   = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
-    var price = fixtures.collar.price
+    var bot       = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
+    var price     = fixtures.collar.price
     sinon.stub(account, 'calculateAvailableMarginIfCrossShifted').returns(fixtures.collar.margin)
     var newOrders = bot.collar(price);
     ['buys', 'sells'].forEach(side => {
@@ -115,22 +115,22 @@ describe('marketMakerBot', function () {
     clock.restore()
   })
 
-  it('should create patch given current book and expected new book', function*() {
-    var bot   = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
+  it('should create patch given current book and expected new book', function* () {
+    var bot    = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
     var result = bot.getPatch(fixtures.createPatch.currentBook, fixtures.createPatch.newBook)
     expect(result).to.eql(fixtures.createPatch.patch)
   })
 
-  it('should get max buy and sell order count based on exposure', function*() {
-    var bot   = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
-    var result = bot.getMaxOrderCounts({quantity:-50}, 'buy')
-    expect(result).to.eql(fixtures.params.maxQty -50)
-    result = bot.getMaxOrderCounts({quantity:-50}, 'sell')
-    expect(result).to.eql(fixtures.params.maxQty +50)
+  it('should get max buy and sell order count based on exposure', function* () {
+    var bot    = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
+    var result = bot.getMaxOrderCounts({ quantity: -50 }, 'buy')
+    expect(result).to.eql(fixtures.params.maxQty + 50)
+    result = bot.getMaxOrderCounts({ quantity: -50 }, 'sell')
+    expect(result).to.eql(fixtures.params.maxQty - 50)
 
   })
 
-  it.skip("should calculate target price using premium", function*() {
+  it.skip("should calculate target price using premium", function* () {
     var timestamp    = Date.parse(fixtures.testDateToday)
     var clock        = sinon.useFakeTimers(timestamp)
     var bot          = yield* Bot.create(fixtures.symbol, fixtures.params, account, fixtures.marginPercent, fixtures.params.bot)
