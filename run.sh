@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 npm update
-
 export TEMPLATE=BTCUSD
 export DEPTH=2
 export STP=9
@@ -24,7 +23,8 @@ export BITMEX_PEG_INTERVAL=1
 export DEBUG=coinpit:*,BitMEX:*
 export BITMEX_COMMISSION_SPREAD_ADJUST=1
 
-export COINPIT_KEY_FILE=~/work/privateKeys/coinpitKey.json
-export BITMEX_KEY_FILE=~/work/privateKeys/bitmexKey.json
+export COINPIT_KEY_FILE=coinpitKey.json
+export BITMEX_KEY_FILE=bitmexKey.json
 
 node src/index.js $COINPIT_KEY_FILE $BITMEX_KEY_FILE
+
