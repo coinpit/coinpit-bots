@@ -69,17 +69,17 @@ module.exports = function* mmBot(symbol, botParams, account, marginPercent) {
     var premium      = bot.getPremium(inst.expiry - Date.now())
     var buyCount     = 0
     for (var i = mangler.fixed(price - buySpread); i > mangler.fixed(price - buySpread - depth); i = mangler.fixed(i - STEP)) {
+      if (buyCount >= maxBuyCount) break;
       var buy         = newOrder('buy', bot.getPremiumPrice(i, premium, inst.ticksize), QTY)
       buys[buy.price] = buy
       buyCount += QTY
-      if (buyCount >= maxBuyCount) break;
     }
     var sellCount = 0
     for (var j = mangler.fixed(price + sellSpread); j < mangler.fixed(price + sellSpread + depth); j = mangler.fixed(j + STEP)) {
+      if (sellCount >= maxSellCount) break;
       var sell          = newOrder('sell', bot.getPremiumPrice(j, premium, inst.ticksize), QTY)
       sells[sell.price] = sell
       sellCount += QTY
-      if (sellCount >= maxSellCount) break;
     }
     return { buys: buys, sells: sells }
   }
