@@ -63,7 +63,7 @@ module.exports = (function* marketMakerGen(params) {
     gen.purgeExpired()
     var availableMarginPercent = 100
     for (var i = 0; i < seriesInstruments.length; i++) {
-      var percent    = (i === seriesInstruments.length - 1 ? 1 : 0.6)
+      var percent    = (i === seriesInstruments.length - 1 ? 1 : params.marginPercent)
       var botPercent = Math.floor(availableMarginPercent * percent)
       availableMarginPercent -= botPercent
       yield* gen.createBot(seriesInstruments[i].symbol, params, account, botPercent)
