@@ -15,6 +15,7 @@ module.exports = (function () {
   var DEFAULT_BOT      = 'marketMakerBot'
   var DEFAULT_INTERVAL = 1000
   var DEFAULT_MAX_QTY  = 1000
+  var DEFAULT_MARGIN_PERCENT  = 0.6
 
   // market maker on coinpit will maintain number of contracts on buy and sell side
   var DEFAULT_BITMEX_QTY_FOR_SPREAD           = 50000
@@ -53,6 +54,7 @@ module.exports = (function () {
     params.bot      = trim(process.env.BOT) || DEFAULT_BOT
     params.interval = (trim(process.env.INTERVAL) || DEFAULT_INTERVAL) - 0
     params.maxQty   = (trim(process.env.MAX_QTY) || DEFAULT_MAX_QTY) - 0
+    params.marginPercent = (trim(process.env.MARGIN_PERCENT) || DEFAULT_MARGIN_PERCENT) - 0
 
     if (bitmex) {
       params.bitmexHedge = true
